@@ -286,6 +286,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final isEdit = widget.memoName != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.surface;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Scaffold(
       appBar: AppBar(
@@ -304,7 +310,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   : _visibility == 'PROTECTED'
                       ? Icons.people_rounded
                       : Icons.lock_rounded,
-              color: AppColors.textSecondary,
+              color: textSecondary,
             ),
             itemBuilder: (_) => [
               PopupMenuItem(value: 'PRIVATE', child: Text(loc.private)),
@@ -330,7 +336,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         children: [
           Container(
             height: 44,
-            color: AppColors.surface,
+            color: surfaceColor,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -405,7 +411,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: AppColors.cardBg,
+                          color: cardBg,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: isImage
@@ -422,16 +428,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2),
                                   ),
-                                  errorWidget: (ctx, url, error) => const Icon(
+                                  errorWidget: (ctx, url, error) => Icon(
                                     Icons.broken_image_rounded,
-                                    color: AppColors.textSecondary,
+                                    color: textSecondary,
                                   ),
                                 ),
                               )
-                            : const Center(
+                            : Center(
                                 child: Icon(
                                   Icons.attach_file_rounded,
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                 ),
                               ),
                       ),
@@ -472,10 +478,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       height: 1.6,
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
                     decoration: InputDecoration(
                       hintText: loc.writeMemo,
