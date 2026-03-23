@@ -107,7 +107,7 @@ class MemosNotifier extends StateNotifier<AsyncValue<List<MemoModel>>> {
     }
   }
 
-  Future<void> createMemo(String content,
+  Future<MemoModel> createMemo(String content,
       {String visibility = 'PRIVATE'}) async {
     final memo = await _repo.createMemo(content, visibility: visibility);
     state.whenData((memos) {
@@ -115,6 +115,7 @@ class MemosNotifier extends StateNotifier<AsyncValue<List<MemoModel>>> {
     });
     // Refresh pending count after a create
     _ref.read(syncStatusProvider.notifier).refresh();
+    return memo;
   }
 
   Future<void> updateMemo(String name, String content) async {

@@ -1,16 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/storage_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/memo_model.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../l10n/app_localizations.dart';
-import 'dart:io';
 
 class EditorScreen extends ConsumerStatefulWidget {
   final String? memoName;
@@ -57,7 +57,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     _MarkdownHelper('link', 'Link', Icons.link_rounded, '[text](url)'),
     _MarkdownHelper('hr', 'Divider', Icons.horizontal_rule_rounded, '\n---\n'),
     _MarkdownHelper('tag', 'Tag', Icons.tag_rounded, '#tag'),
-    _MarkdownHelper('image', 'Image', Icons.image_rounded, ''),
+    _MarkdownHelper('file', 'File', Icons.attach_file_rounded, ''),
   ];
 
   @override
@@ -97,9 +97,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   void _insertMarkdown(_MarkdownHelper helper) {
-    if (helper.id == 'image') {
+    if (helper.id == 'file') {
       setState(() => _showSlashMenu = false);
-      _pickImage();
+      _pickFile();
       return;
     }
 
@@ -138,37 +138,19 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     );
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickFile() async {
     try {
-      final XFile? image = await _picker.pickImage(
+      final XFile? file = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
+        imageQuality: null, // Don't compress - keep original
       );
-      if (image != null) {
-        await _uploadAttachment(File(image.path));
+      if (file != null) {
+        await _uploadAttachment(File(file.path));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
-      if (image != null) {
-        await _uploadAttachment(File(image.path));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to take photo: $e')),
+          SnackBar(content: Text('Failed to pick file: $e')),
         );
       }
     }
@@ -194,9 +176,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     setState(() => _uploading = true);
 
     try {
-      final attachment = await ref
-          .read(memosRepositoryProvider)
-          .uploadAttachment(file.path, memoName: widget.memoName);
+      final attachment =
+          await ref.read(memosRepositoryProvider).uploadAttachment(file.path);
 
       setState(() {
         _attachments.add(attachment);
@@ -244,15 +225,40 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         connectivity.isEmpty || connectivity.contains(ConnectivityResult.none);
 
     try {
+      String? memoName;
       if (widget.memoName != null) {
         await ref
             .read(memosProvider.notifier)
             .updateMemo(widget.memoName!, content);
+        memoName = widget.memoName;
       } else {
-        await ref
+        final memo = await ref
             .read(memosProvider.notifier)
             .createMemo(content, visibility: _visibility);
+        memoName = memo.name;
       }
+
+      // Handle attachments
+      if (memoName != null) {
+        final existingNames =
+            widget.initialAttachments?.map((a) => a.name).toSet() ?? <String>{};
+        final currentNames = _attachments.map((a) => a.name).toSet();
+
+        // Only call setMemoAttachments if attachments changed
+        if (existingNames != currentNames && _attachments.isNotEmpty) {
+          await ref.read(memosRepositoryProvider).setMemoAttachments(
+                memoName,
+                _attachments.map((a) => a.name).toList(),
+              );
+        }
+
+        // Always refresh memo to get latest from server
+        await ref.read(memosRepositoryProvider).getMemo(memoName);
+        // Invalidate providers to force refresh
+        ref.invalidate(memosProvider);
+        ref.invalidate(memoDetailProvider(memoName));
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -280,12 +286,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final isEdit = widget.memoName != null;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
-    final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Scaffold(
       appBar: AppBar(
@@ -304,7 +304,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   : _visibility == 'PROTECTED'
                       ? Icons.people_rounded
                       : Icons.lock_rounded,
-              color: textSecondary,
+              color: AppColors.textSecondary,
             ),
             itemBuilder: (_) => [
               PopupMenuItem(value: 'PRIVATE', child: Text(loc.private)),
@@ -330,7 +330,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         children: [
           Container(
             height: 44,
-            color: surfaceColor,
+            color: AppColors.surface,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -373,12 +373,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     onTap: () => _insertToolbarMarkdown('#', ''),
                   ),
                   _ToolbarButton(
-                    icon: Icons.image_rounded,
-                    onTap: _pickImage,
-                  ),
-                  _ToolbarButton(
-                    icon: Icons.camera_alt_rounded,
-                    onTap: _takePhoto,
+                    icon: Icons.attach_file_rounded,
+                    onTap: _pickFile,
                   ),
                 ],
               ),
@@ -397,8 +393,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                       StorageService.getString(AppConstants.memosInstanceKey) ??
                           '';
                   final attachmentId = att.name.split('/').last;
+                  // Correct URL pattern: /file/attachments/{uid}/{filename}
                   final imageUrl =
-                      '$instanceUrl/file/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
+                      '$instanceUrl/file/attachments/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
                   final isImage = att.type?.startsWith('image/') == true;
 
                   return Stack(
@@ -408,7 +405,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: cardBg,
+                          color: AppColors.cardBg,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: isImage
@@ -425,16 +422,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2),
                                   ),
-                                  errorWidget: (ctx, url, error) => Icon(
+                                  errorWidget: (ctx, url, error) => const Icon(
                                     Icons.broken_image_rounded,
-                                    color: textSecondary,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               )
-                            : Center(
+                            : const Center(
                                 child: Icon(
                                   Icons.attach_file_rounded,
-                                  color: textSecondary,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                       ),
@@ -475,10 +472,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       height: 1.6,
-                      color: textColor,
+                      color: AppColors.textPrimary,
                     ),
                     decoration: InputDecoration(
                       hintText: loc.writeMemo,

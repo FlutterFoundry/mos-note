@@ -13,16 +13,21 @@ import '../../../core/utils/storage_service.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../l10n/app_localizations.dart';
 
-class MemoDetailScreen extends ConsumerWidget {
+class MemoDetailScreen extends ConsumerStatefulWidget {
   final String memoName;
 
   const MemoDetailScreen({super.key, required this.memoName});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MemoDetailScreen> createState() => _MemoDetailScreenState();
+}
+
+class _MemoDetailScreenState extends ConsumerState<MemoDetailScreen> {
+  @override
+  Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final locale = ref.watch(localeProvider);
-    final memoAsync = ref.watch(memoDetailProvider(memoName));
+    final memoAsync = ref.watch(memoDetailProvider(widget.memoName));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
     final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
@@ -60,15 +65,18 @@ class MemoDetailScreen extends ConsumerWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.comment_rounded),
-                onPressed: () => context
-                    .push('/memo/${Uri.encodeComponent(memoName)}/comments'),
+                onPressed: () => context.push(
+                    '/memo/${Uri.encodeComponent(widget.memoName)}/comments'),
               ),
               PopupMenuButton<String>(
                 onSelected: (v) async {
                   if (v == 'edit') {
                     context.push(
-                      '/editor/${Uri.encodeComponent(memoName)}',
-                      extra: {'content': memo.content},
+                      '/editor/${Uri.encodeComponent(widget.memoName)}',
+                      extra: {
+                        'content': memo.content,
+                        'attachments': memo.attachments,
+                      },
                     );
                   } else if (v == 'delete') {
                     final confirm = await showDialog<bool>(
@@ -94,7 +102,7 @@ class MemoDetailScreen extends ConsumerWidget {
                     if (confirm == true) {
                       await ref
                           .read(memosProvider.notifier)
-                          .deleteMemo(memoName);
+                          .deleteMemo(widget.memoName);
                       if (context.mounted) context.pop();
                     }
                   }
@@ -136,8 +144,9 @@ class MemoDetailScreen extends ConsumerWidget {
                               AppConstants.memosInstanceKey) ??
                           '';
                       final attachmentId = att.name.split('/').last;
+                      // Correct URL pattern: /file/attachments/{uid}/{filename}
                       final imageUrl =
-                          '$instanceUrl/file/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
+                          '$instanceUrl/file/attachments/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
                       final isImage = att.type?.startsWith('image/') == true;
 
                       if (isImage) {
@@ -158,7 +167,7 @@ class MemoDetailScreen extends ConsumerWidget {
                               placeholder: (ctx, url) => Container(
                                 width: 120,
                                 height: 120,
-                                color: cardBg,
+                                color: AppColors.cardBg,
                                 child: const Center(
                                   child:
                                       CircularProgressIndicator(strokeWidth: 2),
@@ -167,9 +176,9 @@ class MemoDetailScreen extends ConsumerWidget {
                               errorWidget: (ctx, url, error) => Container(
                                 width: 120,
                                 height: 120,
-                                color: cardBg,
-                                child: Icon(Icons.broken_image_rounded,
-                                    color: textSecondary),
+                                color: AppColors.cardBg,
+                                child: const Icon(Icons.broken_image_rounded,
+                                    color: AppColors.textSecondary),
                               ),
                             ),
                           ),
@@ -179,23 +188,21 @@ class MemoDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: cardBg,
+                            color: AppColors.cardBg,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: isDark
-                                    ? Colors.white24
-                                    : AppColors.divider),
+                            border: Border.all(color: AppColors.divider),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.attach_file_rounded,
-                                  size: 16, color: textSecondary),
+                              const Icon(Icons.attach_file_rounded,
+                                  size: 16, color: AppColors.textSecondary),
                               const SizedBox(width: 6),
                               Text(
                                 att.filename ?? 'attachment',
-                                style: TextStyle(
-                                    fontSize: 12, color: textSecondary),
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary),
                               ),
                             ],
                           ),

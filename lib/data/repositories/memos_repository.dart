@@ -258,9 +258,19 @@ class MemosRepository {
 
   // ── Attachments ────────────────────────────────────────────────────────
 
-  Future<AttachmentModel> uploadAttachment(String filePath,
-      {String? memoName}) async {
-    return _api.uploadAttachment(filePath, memoName: memoName);
+  // ── Attachments ────────────────────────────────────────────────────────
+
+  Future<AttachmentModel> uploadAttachment(String filePath) async {
+    return _api.uploadAttachment(filePath);
+  }
+
+  Future<void> setMemoAttachments(
+      String memoName, List<String> attachmentNames) async {
+    return _api.setMemoAttachments(memoName, attachmentNames);
+  }
+
+  Future<List<AttachmentModel>> listMemoAttachments(String memoName) async {
+    return _api.listMemoAttachments(memoName);
   }
 
   /// Local-first delete: removes from SQLite immediately, queues a pending op,

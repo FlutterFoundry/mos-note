@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../di/providers.dart';
 import '../constants/app_constants.dart';
 import '../utils/storage_service.dart';
+import '../../data/models/memo_model.dart';
 import '../../presentation/screens/instance_setup/instance_setup_screen.dart';
 import '../../presentation/screens/login/login_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
@@ -85,6 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditorScreen(
             memoName: Uri.decodeComponent(name),
             initialContent: extra?['content'] as String?,
+            initialAttachments: extra?['attachments'] as List<AttachmentModel>?,
           );
         },
       ),

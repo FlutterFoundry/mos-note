@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:memos_note/data/models/memo_model.dart';
 import 'package:memos_note/data/models/user_model.dart';
@@ -65,18 +67,66 @@ class MemosApi {
   }
 
   // Attachments
-  Future<AttachmentModel> uploadAttachment(String filePath,
-      {String? memoName}) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(filePath),
-      if (memoName != null) 'memo': memoName,
-    });
+  Future<AttachmentModel> uploadAttachment(String filePath) async {
+    final file = File(filePath);
+    final bytes = await file.readAsBytes();
+    final base64Content = base64Encode(bytes);
+    final filename = filePath.split('/').last;
+
+    // Determine MIME type from extension
+    String mimeType = 'application/octet-stream';
+    final ext = filename.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        mimeType = 'image/jpeg';
+        break;
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'gif':
+        mimeType = 'image/gif';
+        break;
+      case 'webp':
+        mimeType = 'image/webp';
+        break;
+      case 'pdf':
+        mimeType = 'application/pdf';
+        break;
+    }
+
     final res = await _dio.post(
       '/api/v1/attachments',
-      data: formData,
+      data: {
+        'filename': filename,
+        'type': mimeType,
+        'content': base64Content,
+      },
     );
-    return AttachmentModel.fromJson(
-        res.data['attachment'] as Map<String, dynamic>);
+    return AttachmentModel.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> setMemoAttachments(
+    String memoName,
+    List<String> attachmentNames,
+  ) async {
+    final memoId = memoName.split('/').last;
+    await _dio.patch(
+      '/api/v1/memos/$memoId/attachments',
+      data: {
+        'name': memoName,
+        'attachments': attachmentNames.map((name) => {'name': name}).toList(),
+      },
+    );
+  }
+
+  Future<List<AttachmentModel>> listMemoAttachments(String memoName) async {
+    final memoId = memoName.split('/').last;
+    final res = await _dio.get('/api/v1/memos/$memoId/attachments');
+    final attachments = (res.data['attachments'] as List)
+        .map((a) => AttachmentModel.fromJson(a as Map<String, dynamic>))
+        .toList();
+    return attachments;
   }
 
   // Comments

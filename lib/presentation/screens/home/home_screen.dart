@@ -422,12 +422,26 @@ class MemoCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Text(
-              dateStr,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: textSecondary),
+            Row(
+              children: [
+                if (memo.attachments?.isNotEmpty == true) ...[
+                  Icon(
+                    Icons.attach_file_rounded,
+                    size: 12,
+                    color: textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: Text(
+                    dateStr,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: textSecondary),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
