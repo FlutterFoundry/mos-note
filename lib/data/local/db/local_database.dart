@@ -34,7 +34,7 @@ class LocalDatabase {
         pinned INTEGER DEFAULT 0,
         row_status TEXT,
         tags_json TEXT,
-        resources_json TEXT,
+        attachments_json TEXT,
         synced INTEGER DEFAULT 0,
         local_updated INTEGER DEFAULT 0,
         is_local_only INTEGER DEFAULT 0
@@ -65,6 +65,15 @@ class LocalDatabase {
             'ALTER TABLE pending_ops ADD COLUMN retry_count INTEGER DEFAULT 0');
       } catch (_) {
         // Column already exists on fresh installs
+      }
+    }
+    if (oldVersion < 3) {
+      // Rename resources_json to attachments_json
+      try {
+        await db.execute(
+            'ALTER TABLE memos RENAME COLUMN resources_json TO attachments_json');
+      } catch (_) {
+        // Column might already be renamed or fresh install
       }
     }
   }

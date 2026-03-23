@@ -7,6 +7,8 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/memo_model.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +23,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final locale = ref.watch(localeProvider);
     final memosState = ref.watch(memosProvider);
     final tagsState = ref.watch(tagsProvider);
     final auth = ref.watch(authStateProvider);
@@ -33,9 +37,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Memos'),
+        title: Text(loc.appTitle),
         actions: [
           // Sync button with pending-ops badge
           Stack(
@@ -64,8 +67,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(flushed > 0
-                                  ? 'Synced ($flushed pending uploaded)'
-                                  : 'Synced'),
+                                  ? loc.syncedPending(flushed)
+                                  : loc.synced),
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -141,8 +144,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Expanded(
                     child: Text(
                       syncStatus.pendingCount > 0
-                          ? 'Offline — ${syncStatus.pendingCount} change(s) pending sync'
-                          : 'Offline — showing cached memos',
+                          ? '${loc.offline} — ${syncStatus.pendingCount} ${loc.pendingSync}'
+                          : '${loc.offline} — ${loc.showingCached}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -157,12 +160,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               onChanged: (v) => setState(() => _search = v),
-              decoration: const InputDecoration(
-                hintText: 'Search memos...',
+              decoration: InputDecoration(
+                hintText: loc.searchMemos,
                 prefixIcon:
-                    Icon(Icons.search_rounded, color: AppColors.textHint),
+                    const Icon(Icons.search_rounded, color: AppColors.textHint),
                 contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
             ),
           ),
@@ -177,7 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         _TagChip(
-                          label: 'All',
+                          label: loc.all,
                           selected: _selectedTag == null,
                           onTap: () => setState(() => _selectedTag = null),
                         ),
@@ -221,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             size: 64, color: AppColors.textHint),
                         const SizedBox(height: 16),
                         Text(
-                          _search.isEmpty ? 'No memos yet' : 'No results found',
+                          _search.isEmpty ? loc.noMemos : loc.noResults,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     color: AppColors.textSecondary,
@@ -230,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         if (_search.isEmpty) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'Tap + to create your first memo',
+                            loc.createFirst,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
@@ -252,8 +255,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
                     itemCount: filtered.length,
-                    itemBuilder: (context, index) =>
-                        MemoCard(memo: filtered[index]),
+                    itemBuilder: (context, index) => MemoCard(
+                        memo: filtered[index],
+                        loc: loc,
+                        localeCode: locale.languageCode),
                   ),
                 );
               },
@@ -265,14 +270,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const Icon(Icons.error_outline,
                         size: 48, color: AppColors.error),
                     const SizedBox(height: 12),
-                    Text('Failed to load memos',
+                    Text(loc.failedToLoad,
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => ref
                           .read(memosProvider.notifier)
                           .loadMemos(refresh: true),
-                      child: const Text('Retry'),
+                      child: Text(loc.retry),
                     ),
                   ],
                 ),
@@ -289,9 +294,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildShimmer() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shimmerBase = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final shimmerHighlight = isDark ? AppColors.darkSurface : Colors.white;
+
     return Shimmer.fromColors(
-      baseColor: AppColors.cardBg,
-      highlightColor: Colors.white,
+      baseColor: shimmerBase,
+      highlightColor: shimmerHighlight,
       child: MasonryGridView.count(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         crossAxisCount: 2,
@@ -301,7 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemBuilder: (context, index) => Container(
           height: index.isEven ? 140 : 100,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: shimmerHighlight,
             borderRadius: BorderRadius.circular(12),
           ),
         ),
@@ -312,14 +321,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class MemoCard extends StatelessWidget {
   final MemoModel memo;
-  const MemoCard({super.key, required this.memo});
+  final AppLocalizations loc;
+  final String localeCode;
+  const MemoCard(
+      {super.key,
+      required this.memo,
+      required this.loc,
+      required this.localeCode});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
     final preview = memo.snippet ?? _getPreview(memo.content);
     final tags = _extractTags(memo.content);
     final dateStr = memo.displayTime != null
-        ? timeago.format(DateTime.tryParse(memo.displayTime!) ?? DateTime.now())
+        ? timeago.format(DateTime.tryParse(memo.displayTime!) ?? DateTime.now(),
+            locale: localeCode)
         : '';
     // Detect local-only memos by their temp name prefix
     final isLocalOnly = memo.id.startsWith('local_');
@@ -329,7 +351,7 @@ class MemoCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
+          color: cardBg,
           borderRadius: BorderRadius.circular(12),
           border: isLocalOnly
               ? Border.all(
@@ -354,7 +376,7 @@ class MemoCard extends StatelessWidget {
                         size: 11, color: AppColors.primary),
                     const SizedBox(width: 3),
                     Text(
-                      'Saved offline',
+                      loc.savedOffline,
                       style: TextStyle(
                         fontSize: 10,
                         color: AppColors.primary.withValues(alpha: 0.8),
@@ -368,7 +390,10 @@ class MemoCard extends StatelessWidget {
               preview,
               maxLines: 8,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: textColor),
             ),
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -399,7 +424,10 @@ class MemoCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               dateStr,
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: textSecondary),
             ),
           ],
         ),
@@ -435,6 +463,8 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipBg = isDark ? AppColors.darkCard : AppColors.cardBg;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -443,7 +473,7 @@ class _TagChip extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary : AppColors.cardBg,
+            color: selected ? AppColors.primary : chipBg,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(

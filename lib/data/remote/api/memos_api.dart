@@ -64,6 +64,21 @@ class MemosApi {
     await _dio.delete('/api/v1/$name');
   }
 
+  // Attachments
+  Future<AttachmentModel> uploadAttachment(String filePath,
+      {String? memoName}) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+      if (memoName != null) 'memo': memoName,
+    });
+    final res = await _dio.post(
+      '/api/v1/attachments',
+      data: formData,
+    );
+    return AttachmentModel.fromJson(
+        res.data['attachment'] as Map<String, dynamic>);
+  }
+
   // Comments
   Future<ListCommentsResponse> listComments(String name) async {
     final res = await _dio.get('/api/v1/$name/comments');

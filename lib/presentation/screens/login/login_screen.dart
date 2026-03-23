@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -52,6 +53,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -67,14 +69,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Welcome back',
+                loc.welcomeBack,
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'Sign in with your Personal Access Token',
+                loc.signInWithToken,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 32),
@@ -90,8 +94,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onFieldSubmitted: (_) => _signIn(),
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
                   decoration: InputDecoration(
-                    labelText: 'Personal Access Token',
-                    hintText: 'Paste your token here',
+                    labelText: loc.personalAccessToken,
+                    hintText: loc.pasteTokenHere,
                     prefixIcon: const Icon(Icons.key_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -104,7 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Enter your access token'
+                      ? loc.enterAccessToken
                       : null,
                 ),
               ),
@@ -147,13 +151,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Sign In'),
+                    : Text(loc.signIn),
               ),
 
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  'Generate a token in your Memos settings\nunder Settings > My Account > Access Tokens.',
+                  loc.tokenHelp,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,

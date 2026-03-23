@@ -6,6 +6,7 @@ class AppConstants {
   static const userIdKey = 'user_id';
   static const usernameKey = 'username';
   static const themeKey = 'theme_mode';
+  static const localeKey = 'app_locale';
 
   // API
   static const apiVersion = '/api/v1';
@@ -21,5 +22,5 @@ class AppConstants {
 
   // DB
   static const dbName = 'memos_local.db';
-  static const dbVersion = 2;
+  static const dbVersion = 3;
 }

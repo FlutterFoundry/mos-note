@@ -222,7 +222,7 @@ class MemosRepository {
         pinned: existing.pinned,
         rowStatus: existing.rowStatus,
         tags: existing.tags,
-        resources: existing.resources,
+        attachments: existing.attachments,
       );
       await MemoDao.upsertMemo(updated);
     }
@@ -254,6 +254,13 @@ class MemosRepository {
     // Return the locally-patched version
     return (await MemoDao.getMemoById(id)) ??
         MemoModel(name: name, content: content);
+  }
+
+  // ── Attachments ────────────────────────────────────────────────────────
+
+  Future<AttachmentModel> uploadAttachment(String filePath,
+      {String? memoName}) async {
+    return _api.uploadAttachment(filePath, memoName: memoName);
   }
 
   /// Local-first delete: removes from SQLite immediately, queues a pending op,

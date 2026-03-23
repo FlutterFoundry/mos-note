@@ -231,5 +231,81 @@ class AppTheme {
             ),
           ),
         ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            textStyle: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: AppColors.darkCard,
+          selectedColor: AppColors.primary.withValues(alpha: 0.15),
+          labelStyle: const TextStyle(fontSize: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: Colors.white24,
+          thickness: 1,
+          space: 1,
+        ),
+        textTheme: const TextTheme(
+          headlineLarge: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkText,
+          ),
+          headlineMedium: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkText,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkText,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkText,
+          ),
+          bodyLarge: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: AppColors.darkText,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppColors.darkText,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: AppColors.darkTextSecondary,
+          ),
+          labelSmall: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkTextSecondary,
+          ),
+        ),
       );
+}
+
+extension AppColorsExtension on BuildContext {
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
+
+  Color get background =>
+      isDarkMode ? AppColors.darkBackground : AppColors.background;
+  Color get surface => isDarkMode ? AppColors.darkSurface : AppColors.surface;
+  Color get cardBackground =>
+      isDarkMode ? AppColors.darkCard : AppColors.cardBg;
+  Color get textPrimaryColor =>
+      isDarkMode ? AppColors.darkText : AppColors.textPrimary;
+  Color get textSecondaryColor =>
+      isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+  Color get dividerColor => isDarkMode ? Colors.white24 : AppColors.divider;
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/storage_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 
 class InstanceSetupScreen extends ConsumerStatefulWidget {
   const InstanceSetupScreen({super.key});
@@ -56,6 +57,7 @@ class _InstanceSetupScreenState extends ConsumerState<InstanceSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -78,14 +80,16 @@ class _InstanceSetupScreenState extends ConsumerState<InstanceSetupScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Connect to Memos',
+                  loc.connectToMemos,
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter your Memos instance URL to get started.',
+                  loc.enterInstanceUrl,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 40),
@@ -95,14 +99,14 @@ class _InstanceSetupScreenState extends ConsumerState<InstanceSetupScreen> {
                   autocorrect: false,
                   textInputAction: TextInputAction.go,
                   onFieldSubmitted: (_) => _connect(),
-                  decoration: const InputDecoration(
-                    labelText: 'Instance URL',
-                    hintText: 'https://demo.usememos.com',
-                    prefixIcon: Icon(Icons.link_rounded),
+                  decoration: InputDecoration(
+                    labelText: loc.instanceUrl,
+                    hintText: loc.instanceUrlHint,
+                    prefixIcon: const Icon(Icons.link_rounded),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your Memos instance URL';
+                      return loc.enterInstanceUrl;
                     }
                     return null;
                   },
@@ -127,12 +131,12 @@ class _InstanceSetupScreenState extends ConsumerState<InstanceSetupScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text('Continue'),
+                      : Text(loc.continueBtn),
                 ),
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    'Memos is open-source, self-hosted note taking.\nLearn more at usememos.com',
+                    loc.memosInfo,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),

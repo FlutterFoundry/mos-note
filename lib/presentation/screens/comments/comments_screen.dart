@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class CommentsScreen extends ConsumerStatefulWidget {
   final String memoName;
@@ -45,10 +47,18 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final locale = ref.watch(localeProvider);
     final commentsState = ref.watch(commentsProvider(widget.memoName));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final bgColor = isDark ? AppColors.darkBackground : AppColors.background;
+    final dividerColor = isDark ? Colors.white24 : AppColors.divider;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Comments')),
+      appBar: AppBar(title: Text(loc.comments)),
       body: Column(
         children: [
           Expanded(
@@ -58,15 +68,18 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.comment_outlined,
-                              size: 48, color: AppColors.textHint),
+                          Icon(Icons.comment_outlined,
+                              size: 48,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textHint),
                           const SizedBox(height: 12),
-                          Text('No comments yet',
+                          Text(loc.noComments,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: textSecondary,
                                   )),
                         ],
                       ),
@@ -78,13 +91,15 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                       itemBuilder: (context, i) {
                         final c = comments[i];
                         final dateStr = c.createTime != null
-                            ? timeago.format(DateTime.tryParse(c.createTime!) ??
-                                DateTime.now())
+                            ? timeago.format(
+                                DateTime.tryParse(c.createTime!) ??
+                                    DateTime.now(),
+                                locale: locale.languageCode)
                             : '';
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.cardBg,
+                            color: cardBg,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -143,9 +158,9 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
           Container(
             padding: EdgeInsets.fromLTRB(
                 16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(top: BorderSide(color: AppColors.divider)),
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: Border(top: BorderSide(color: dividerColor)),
             ),
             child: Row(
               children: [
@@ -155,10 +170,10 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                     minLines: 1,
                     maxLines: 4,
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
-                      hintText: 'Add a comment...',
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: InputDecoration(
+                      hintText: loc.addComment,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                     ),
                   ),
                 ),

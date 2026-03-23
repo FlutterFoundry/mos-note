@@ -1,0 +1,108 @@
+{
+  "@@locale": "en",
+  "appTitle": "Memos",
+  
+  "welcomeBack": "Welcome back",
+  "signInWithToken": "Sign in with your Personal Access Token",
+  "personalAccessToken": "Personal Access Token",
+  "pasteTokenHere": "Paste your token here",
+  "enterAccessToken": "Enter your access token",
+  "signIn": "Sign In",
+  "tokenHelp": "Generate a token in your Memos settings\\nunder Settings > My Account > Access Tokens.",
+  "invalidToken": "Invalid access token. Make sure it has not expired.",
+  
+  "connectToMemos": "Connect to Memos",
+  "enterInstanceUrl": "Enter your Memos instance URL to get started.",
+  "instanceUrl": "Instance URL",
+  "instanceUrlHint": "https://demo.usememos.com",
+  "enterInstanceUrl": "Please enter your Memos instance URL",
+  "continueBtn": "Continue",
+  "connectionFailed": "Could not connect to the instance. Check the URL.",
+  "memosInfo": "Memos is open-source, self-hosted note taking.\\nLearn more at usememos.com",
+  
+  "searchMemos": "Search memos...",
+  "noMemos": "No memos yet",
+  "noResults": "No results found",
+  "createFirst": "Tap + to create your first memo",
+  "failedToLoad": "Failed to load memos",
+  "retry": "Retry",
+  "all": "All",
+  "savedOffline": "Saved offline",
+  "offline": "Offline",
+  "pendingSync": "change(s) pending sync",
+  "showingCached": "showing cached memos",
+  "synced": "Synced",
+  "syncedPending": "Synced ({count} pending uploaded)",
+  
+  "newMemo": "New Memo",
+  "editMemo": "Edit Memo",
+  "writeMemo": "Write your memo... (type / for formatting)",
+  "save": "Save",
+  "saved": "Saved",
+  "failedToSave": "Failed to save: {error}",
+  "private": "Private",
+  "protected": "Protected",
+  "public": "Public",
+  
+  "format": "Format",
+  "heading1": "Heading 1",
+  "heading2": "Heading 2",
+  "heading3": "Heading 3",
+  "bold": "Bold",
+  "italic": "Italic",
+  "inlineCode": "Inline Code",
+  "codeBlock": "Code Block",
+  "blockquote": "Blockquote",
+  "bulletList": "Bullet List",
+  "numberedList": "Numbered List",
+  "task": "Task",
+  "link": "Link",
+  "divider": "Divider",
+  "tag": "Tag",
+  
+  "profile": "Profile",
+  "notLoggedIn": "Not logged in",
+  "instance": "Instance",
+  "account": "Account",
+  "username": "Username",
+  "description": "Description",
+  "settings": "Settings",
+  "changeInstance": "Change Instance",
+  "signOut": "Sign Out",
+  "signOutConfirm": "Sign out",
+  "signOutMessage": "Are you sure you want to sign out?",
+  "cancel": "Cancel",
+  
+  "language": "Language",
+  "english": "English",
+  "indonesian": "Indonesian",
+  "languageSettings": "Language Settings",
+  
+  "comments": "Comments",
+  "noComments": "No comments yet",
+  "addComment": "Add a comment...",
+  
+  "shareMemo": "Share Memo",
+  "shareContentAndLink": "Share content and link",
+  "shareLinkOnly": "Share link only",
+  "memoNotFound": "Memo not found",
+  "deleteMemo": "Delete memo",
+  "deleteMemoConfirm": "This action cannot be undone.",
+  "delete": "Delete",
+  "edit": "Edit",
+  
+  "@syncedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@failedToSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+}

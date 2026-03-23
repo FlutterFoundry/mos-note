@@ -1,0 +1,108 @@
+{
+  "@@locale": "id",
+  "appTitle": "Memos",
+  
+  "welcomeBack": "Selamat datang kembali",
+  "signInWithToken": "Masuk dengan Token Akses Pribadi Anda",
+  "personalAccessToken": "Token Akses Pribadi",
+  "pasteTokenHere": "Tempel token Anda di sini",
+  "enterAccessToken": "Masukkan token akses Anda",
+  "signIn": "Masuk",
+  "tokenHelp": "Buat token di pengaturan Memos Anda\\ndi Pengaturan > Akun Saya > Token Akses.",
+  "invalidToken": "Token akses tidak valid. Pastikan belum kedaluwarsa.",
+  
+  "connectToMemos": "Hubungkan ke Memos",
+  "enterInstanceUrl": "Masukkan URL instansi Memos Anda untuk memulai.",
+  "instanceUrl": "URL Instansi",
+  "instanceUrlHint": "https://demo.usememos.com",
+  "enterInstanceUrl": "Silakan masukkan URL instansi Memos Anda",
+  "continueBtn": "Lanjutkan",
+  "connectionFailed": "Tidak dapat terhubung ke instansi. Periksa URL-nya.",
+  "memosInfo": "Memos adalah aplikasi catatan sumber terbuka yang di-host sendiri.\\nPelajari lebih lanjut di usememos.com",
+  
+  "searchMemos": "Cari memo...",
+  "noMemos": "Belum ada memo",
+  "noResults": "Tidak ada hasil ditemukan",
+  "createFirst": "Ketuk + untuk membuat memo pertama Anda",
+  "failedToLoad": "Gagal memuat memo",
+  "retry": "Coba Lagi",
+  "all": "Semua",
+  "savedOffline": "Tersimpan offline",
+  "offline": "Offline",
+  "pendingSync": "perubahan menunggu sinkronisasi",
+  "showingCached": "menampilkan memo tersimpan",
+  "synced": "Tersinkron",
+  "syncedPending": "Tersinkron ({count} menunggu diunggah)",
+  
+  "newMemo": "Memo Baru",
+  "editMemo": "Edit Memo",
+  "writeMemo": "Tulis memo Anda... (ketik / untuk format)",
+  "save": "Simpan",
+  "saved": "Tersimpan",
+  "failedToSave": "Gagal menyimpan: {error}",
+  "private": "Pribadi",
+  "protected": "Terlindungi",
+  "public": "Publik",
+  
+  "format": "Format",
+  "heading1": "Judul 1",
+  "heading2": "Judul 2",
+  "heading3": "Judul 3",
+  "bold": "Tebal",
+  "italic": "Miring",
+  "inlineCode": "Kode Inline",
+  "codeBlock": "Blok Kode",
+  "blockquote": "Kutipan",
+  "bulletList": "Daftar Poin",
+  "numberedList": "Daftar Nomor",
+  "task": "Tugas",
+  "link": "Tautan",
+  "divider": "Pembatas",
+  "tag": "Tag",
+  
+  "profile": "Profil",
+  "notLoggedIn": "Tidak masuk",
+  "instance": "Instansi",
+  "account": "Akun",
+  "username": "Nama Pengguna",
+  "description": "Deskripsi",
+  "settings": "Pengaturan",
+  "changeInstance": "Ganti Instansi",
+  "signOut": "Keluar",
+  "signOutConfirm": "Keluar",
+  "signOutMessage": "Apakah Anda yakin ingin keluar?",
+  "cancel": "Batal",
+  
+  "language": "Bahasa",
+  "english": "Inggris",
+  "indonesian": "Indonesia",
+  "languageSettings": "Pengaturan Bahasa",
+  
+  "comments": "Komentar",
+  "noComments": "Belum ada komentar",
+  "addComment": "Tambahkan komentar...",
+  
+  "shareMemo": "Bagikan Memo",
+  "shareContentAndLink": "Bagikan konten dan tautan",
+  "shareLinkOnly": "Bagikan tautan saja",
+  "memoNotFound": "Memo tidak ditemukan",
+  "deleteMemo": "Hapus memo",
+  "deleteMemoConfirm": "Tindakan ini tidak dapat dibatalkan.",
+  "delete": "Hapus",
+  "edit": "Edit",
+  
+  "@syncedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@failedToSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+}

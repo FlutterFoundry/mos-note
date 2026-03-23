@@ -25,8 +25,8 @@ class MemoDao {
         'row_status': memo.rowStatus,
         'tags_json':
             jsonEncode(memo.tags?.map((t) => t.toJson()).toList() ?? []),
-        'resources_json':
-            jsonEncode(memo.resources?.map((r) => r.toJson()).toList() ?? []),
+        'attachments_json':
+            jsonEncode(memo.attachments?.map((a) => a.toJson()).toList() ?? []),
         'synced': isLocalOnly ? 0 : 1,
         'local_updated': 0,
         'is_local_only': isLocalOnly ? 1 : 0,
@@ -54,8 +54,8 @@ class MemoDao {
           'row_status': memo.rowStatus,
           'tags_json':
               jsonEncode(memo.tags?.map((t) => t.toJson()).toList() ?? []),
-          'resources_json':
-              jsonEncode(memo.resources?.map((r) => r.toJson()).toList() ?? []),
+          'attachments_json': jsonEncode(
+              memo.attachments?.map((a) => a.toJson()).toList() ?? []),
           'synced': 1,
           'local_updated': 0,
           'is_local_only': 0,
@@ -127,17 +127,17 @@ class MemoDao {
 
   static MemoModel _rowToMemo(Map<String, dynamic> row) {
     final tagsJson = row['tags_json'] as String?;
-    final resourcesJson = row['resources_json'] as String?;
+    final attachmentsJson = row['attachments_json'] as String?;
     final tags = tagsJson != null && tagsJson.isNotEmpty
         ? (jsonDecode(tagsJson) as List)
             .map((t) => TagModel.fromJson(t as Map<String, dynamic>))
             .toList()
         : <TagModel>[];
-    final resources = resourcesJson != null && resourcesJson.isNotEmpty
-        ? (jsonDecode(resourcesJson) as List)
-            .map((r) => ResourceModel.fromJson(r as Map<String, dynamic>))
+    final attachments = attachmentsJson != null && attachmentsJson.isNotEmpty
+        ? (jsonDecode(attachmentsJson) as List)
+            .map((a) => AttachmentModel.fromJson(a as Map<String, dynamic>))
             .toList()
-        : <ResourceModel>[];
+        : <AttachmentModel>[];
 
     return MemoModel(
       name: row['name'] as String,
@@ -150,7 +150,7 @@ class MemoDao {
       pinned: (row['pinned'] as int?) == 1,
       rowStatus: row['row_status'] as String?,
       tags: tags,
-      resources: resources,
+      attachments: attachments,
     );
   }
 }

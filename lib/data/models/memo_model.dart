@@ -15,7 +15,7 @@ class MemoModel {
   final String? visibility;
   final List<TagModel>? tags;
   final bool? pinned;
-  final List<ResourceModel>? resources;
+  final List<AttachmentModel>? attachments;
   final List<RelationModel>? relations;
   final List<ReactionModel>? reactions;
   final MemoPropertyModel? property;
@@ -35,7 +35,7 @@ class MemoModel {
     this.visibility,
     this.tags,
     this.pinned,
-    this.resources,
+    this.attachments,
     this.relations,
     this.reactions,
     this.property,
@@ -62,28 +62,28 @@ class TagModel {
 }
 
 @JsonSerializable()
-class ResourceModel {
+class AttachmentModel {
   final String name;
-  final String? uid;
   final String? createTime;
   final String? filename;
   final String? content;
   final String? externalLink;
   final String? type;
-  final int? size;
-  const ResourceModel({
+  final String? size;
+  final String? memo;
+  const AttachmentModel({
     required this.name,
-    this.uid,
     this.createTime,
     this.filename,
     this.content,
     this.externalLink,
     this.type,
     this.size,
+    this.memo,
   });
-  factory ResourceModel.fromJson(Map<String, dynamic> json) =>
-      _$ResourceModelFromJson(json);
-  Map<String, dynamic> toJson() => _$ResourceModelToJson(this);
+  factory AttachmentModel.fromJson(Map<String, dynamic> json) =>
+      _$AttachmentModelFromJson(json);
+  Map<String, dynamic> toJson() => _$AttachmentModelToJson(this);
 }
 
 @JsonSerializable()

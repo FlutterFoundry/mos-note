@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/storage_service.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../data/models/memo_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../../l10n/app_localizations.dart';
+import 'dart:io';
 
 class EditorScreen extends ConsumerStatefulWidget {
   final String? memoName;
   final String? initialContent;
+  final List<AttachmentModel>? initialAttachments;
 
-  const EditorScreen({super.key, this.memoName, this.initialContent});
+  const EditorScreen({
+    super.key,
+    this.memoName,
+    this.initialContent,
+    this.initialAttachments,
+  });
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -20,9 +33,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   late FocusNode _focusNode;
   bool _saving = false;
   bool _showSlashMenu = false;
+  bool _uploading = false;
   String _visibility = 'PRIVATE';
+  List<AttachmentModel> _attachments = [];
+  final ImagePicker _picker = ImagePicker();
 
-  final List<_MarkdownHelper> _helpers = const [
+  final List<_MarkdownHelper> _helpersEn = const [
     _MarkdownHelper('h1', 'Heading 1', Icons.title_rounded, '# '),
     _MarkdownHelper('h2', 'Heading 2', Icons.text_fields_rounded, '## '),
     _MarkdownHelper('h3', 'Heading 3', Icons.text_fields_rounded, '### '),
@@ -41,6 +57,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     _MarkdownHelper('link', 'Link', Icons.link_rounded, '[text](url)'),
     _MarkdownHelper('hr', 'Divider', Icons.horizontal_rule_rounded, '\n---\n'),
     _MarkdownHelper('tag', 'Tag', Icons.tag_rounded, '#tag'),
+    _MarkdownHelper('image', 'Image', Icons.image_rounded, ''),
   ];
 
   @override
@@ -49,6 +66,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     _controller = TextEditingController(text: widget.initialContent ?? '');
     _focusNode = FocusNode();
     _controller.addListener(_onTextChanged);
+    _attachments = widget.initialAttachments ?? [];
   }
 
   @override
@@ -70,7 +88,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     if (lastChar == '/') {
       setState(() => _showSlashMenu = true);
     } else if (_showSlashMenu) {
-      // Check if the / before cursor is still present
       final textBeforeCursor = text.substring(0, cursor);
       final lastSlash = textBeforeCursor.lastIndexOf('/');
       if (lastSlash == -1) {
@@ -80,11 +97,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   void _insertMarkdown(_MarkdownHelper helper) {
+    if (helper.id == 'image') {
+      setState(() => _showSlashMenu = false);
+      _pickImage();
+      return;
+    }
+
     setState(() => _showSlashMenu = false);
     final text = _controller.text;
     final cursor = _controller.selection.baseOffset;
 
-    // Remove the '/' trigger
     final lastSlash = text.lastIndexOf('/', cursor - 1);
     final before = lastSlash >= 0
         ? text.substring(0, lastSlash)
@@ -116,7 +138,100 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        await _uploadAttachment(File(image.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        await _uploadAttachment(File(image.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to take photo: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadAttachment(File file) async {
+    final online = await Connectivity().checkConnectivity();
+    final isOffline =
+        online.isEmpty || online.contains(ConnectivityResult.none);
+
+    if (isOffline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cannot upload attachments while offline'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() => _uploading = true);
+
+    try {
+      final attachment = await ref
+          .read(memosRepositoryProvider)
+          .uploadAttachment(file.path, memoName: widget.memoName);
+
+      setState(() {
+        _attachments.add(attachment);
+        _uploading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Attachment uploaded'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _uploading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeAttachment(int index) {
+    setState(() {
+      _attachments.removeAt(index);
+    });
+  }
+
   Future<void> _save() async {
+    final loc = AppLocalizations.of(context)!;
     final content = _controller.text.trim();
     if (content.isEmpty) {
       context.pop();
@@ -124,7 +239,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
     setState(() => _saving = true);
 
-    // Check connectivity to decide on the snackbar message
     final connectivity = await Connectivity().checkConnectivity();
     final isOffline =
         connectivity.isEmpty || connectivity.contains(ConnectivityResult.none);
@@ -142,7 +256,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isOffline ? 'Saved offline' : 'Saved'),
+            content: Text(isOffline ? loc.savedOffline : loc.saved),
             duration: const Duration(seconds: 2),
             backgroundColor:
                 isOffline ? AppColors.textSecondary : AppColors.primary,
@@ -155,7 +269,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Failed to save: $e'),
+              content: Text(loc.failedToSave(e.toString())),
               backgroundColor: AppColors.error),
         );
       }
@@ -164,18 +278,23 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final isEdit = widget.memoName != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.surface;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Memo' : 'New Memo'),
+        title: Text(isEdit ? loc.editMemo : loc.newMemo),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => context.pop(),
         ),
         actions: [
-          // Visibility toggle
           PopupMenuButton<String>(
             initialValue: _visibility,
             onSelected: (v) => setState(() => _visibility = v),
@@ -185,12 +304,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   : _visibility == 'PROTECTED'
                       ? Icons.people_rounded
                       : Icons.lock_rounded,
-              color: AppColors.textSecondary,
+              color: textSecondary,
             ),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'PRIVATE', child: Text('Private')),
-              const PopupMenuItem(value: 'PROTECTED', child: Text('Protected')),
-              const PopupMenuItem(value: 'PUBLIC', child: Text('Public')),
+              PopupMenuItem(value: 'PRIVATE', child: Text(loc.private)),
+              PopupMenuItem(value: 'PROTECTED', child: Text(loc.protected)),
+              PopupMenuItem(value: 'PUBLIC', child: Text(loc.public)),
             ],
           ),
           TextButton(
@@ -202,17 +321,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.primary),
                   )
-                : const Text('Save',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
+                : Text(loc.save,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Markdown toolbar
           Container(
             height: 44,
-            color: AppColors.surface,
+            color: surfaceColor,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -254,11 +372,98 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     icon: Icons.tag_rounded,
                     onTap: () => _insertToolbarMarkdown('#', ''),
                   ),
+                  _ToolbarButton(
+                    icon: Icons.image_rounded,
+                    onTap: _pickImage,
+                  ),
+                  _ToolbarButton(
+                    icon: Icons.camera_alt_rounded,
+                    onTap: _takePhoto,
+                  ),
                 ],
               ),
             ),
           ),
-          // Editor
+          if (_attachments.isNotEmpty)
+            Container(
+              height: 100,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _attachments.length,
+                itemBuilder: (context, index) {
+                  final att = _attachments[index];
+                  final instanceUrl =
+                      StorageService.getString(AppConstants.memosInstanceKey) ??
+                          '';
+                  final attachmentId = att.name.split('/').last;
+                  final imageUrl =
+                      '$instanceUrl/file/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
+                  final isImage = att.type?.startsWith('image/') == true;
+
+                  return Stack(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: isImage
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  httpHeaders: {
+                                    'Authorization':
+                                        'Bearer ${StorageService.getString(AppConstants.accessTokenKey) ?? ''}',
+                                  },
+                                  placeholder: (ctx, url) => const Center(
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                  errorWidget: (ctx, url, error) => Icon(
+                                    Icons.broken_image_rounded,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(
+                                  Icons.attach_file_rounded,
+                                  color: textSecondary,
+                                ),
+                              ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => _removeAttachment(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          if (_uploading)
+            const LinearProgressIndicator(color: AppColors.primary),
           Expanded(
             child: Stack(
               children: [
@@ -270,13 +475,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       height: 1.6,
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
-                    decoration: const InputDecoration(
-                      hintText: 'Write your memo... (type / for formatting)',
+                    decoration: InputDecoration(
+                      hintText: loc.writeMemo,
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -284,14 +489,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     ),
                   ),
                 ),
-                // Slash command menu
                 if (_showSlashMenu)
                   Positioned(
                     bottom: MediaQuery.of(context).viewInsets.bottom + 8,
                     left: 16,
                     right: 16,
                     child: _SlashMenu(
-                      helpers: _helpers,
+                      helpers: _helpersEn,
                       onSelect: _insertMarkdown,
                       onDismiss: () => setState(() => _showSlashMenu = false),
                     ),
@@ -322,9 +526,12 @@ class _ToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return IconButton(
       icon: Icon(icon, size: 20),
-      color: AppColors.textSecondary,
+      color: iconColor,
       onPressed: onTap,
       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       padding: const EdgeInsets.all(6),
@@ -345,15 +552,22 @@ class _SlashMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkBackground : AppColors.background;
+    final dividerColor = isDark ? Colors.white24 : AppColors.divider;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textHint = isDark ? AppColors.darkTextSecondary : AppColors.textHint;
+
     return Material(
       elevation: 8,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 280),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
+          border: Border.all(color: dividerColor),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -362,12 +576,12 @@ class _SlashMenu extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Format',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                     ),
                   ),
                   const Spacer(),
@@ -396,9 +610,9 @@ class _SlashMenu extends StatelessWidget {
                       h.markdown.length > 20
                           ? '${h.markdown.substring(0, 20)}...'
                           : h.markdown,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textHint,
+                        color: textHint,
                         fontFamily: 'monospace',
                       ),
                     ),

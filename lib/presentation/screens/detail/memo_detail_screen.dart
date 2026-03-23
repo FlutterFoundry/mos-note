@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/storage_service.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class MemoDetailScreen extends ConsumerWidget {
   final String memoName;
@@ -17,14 +20,21 @@ class MemoDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
+    final locale = ref.watch(localeProvider);
     final memoAsync = ref.watch(memoDetailProvider(memoName));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.cardBg;
+    final textColor = isDark ? AppColors.darkText : AppColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return memoAsync.when(
       data: (memo) {
         if (memo == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Memo not found')),
+            body: Center(child: Text(loc.memoNotFound)),
           );
         }
 
@@ -34,18 +44,19 @@ class MemoDetailScreen extends ConsumerWidget {
         );
 
         final dateStr = memo.displayTime != null
-            ? timeago
-                .format(DateTime.tryParse(memo.displayTime!) ?? DateTime.now())
+            ? timeago.format(
+                DateTime.tryParse(memo.displayTime!) ?? DateTime.now(),
+                locale: locale.languageCode)
             : '';
 
         return Scaffold(
-          backgroundColor: AppColors.background,
           appBar: AppBar(
             title: Text(dateStr, style: Theme.of(context).textTheme.bodySmall),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share_rounded),
-                onPressed: () => _share(memo.content, memo.name),
+                onPressed: () =>
+                    _showShareOptions(context, memo.content, memo.name),
               ),
               IconButton(
                 icon: const Icon(Icons.comment_rounded),
@@ -63,18 +74,18 @@ class MemoDetailScreen extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (_) => AlertDialog(
-                        title: const Text('Delete memo'),
-                        content: const Text('This action cannot be undone.'),
+                        title: Text(loc.deleteMemo),
+                        content: Text(loc.deleteMemoConfirm),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
+                            child: Text(loc.cancel),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text(
-                              'Delete',
-                              style: TextStyle(color: AppColors.error),
+                            child: Text(
+                              loc.delete,
+                              style: const TextStyle(color: AppColors.error),
                             ),
                           ),
                         ],
@@ -89,21 +100,22 @@ class MemoDetailScreen extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(children: [
-                      Icon(Icons.edit_rounded, size: 18),
-                      SizedBox(width: 8),
-                      Text('Edit'),
+                      const Icon(Icons.edit_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Text(loc.edit),
                     ]),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
-                      Icon(Icons.delete_rounded,
+                      const Icon(Icons.delete_rounded,
                           size: 18, color: AppColors.error),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: AppColors.error)),
+                      const SizedBox(width: 8),
+                      Text(loc.delete,
+                          style: const TextStyle(color: AppColors.error)),
                     ]),
                   ),
                 ],
@@ -115,7 +127,84 @@ class MemoDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Metadata row
+                if (memo.attachments?.isNotEmpty == true) ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: memo.attachments!.map((att) {
+                      final instanceUrl = StorageService.getString(
+                              AppConstants.memosInstanceKey) ??
+                          '';
+                      final attachmentId = att.name.split('/').last;
+                      final imageUrl =
+                          '$instanceUrl/file/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
+                      final isImage = att.type?.startsWith('image/') == true;
+
+                      if (isImage) {
+                        return GestureDetector(
+                          onTap: () => _showFullScreenImage(
+                              context, imageUrl, att.filename ?? 'image'),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              httpHeaders: {
+                                'Authorization':
+                                    'Bearer ${StorageService.getString(AppConstants.accessTokenKey) ?? ''}',
+                              },
+                              placeholder: (ctx, url) => Container(
+                                width: 120,
+                                height: 120,
+                                color: cardBg,
+                                child: const Center(
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (ctx, url, error) => Container(
+                                width: 120,
+                                height: 120,
+                                color: cardBg,
+                                child: Icon(Icons.broken_image_rounded,
+                                    color: textSecondary),
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: isDark
+                                    ? Colors.white24
+                                    : AppColors.divider),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.attach_file_rounded,
+                                  size: 16, color: textSecondary),
+                              const SizedBox(width: 6),
+                              Text(
+                                att.filename ?? 'attachment',
+                                style: TextStyle(
+                                    fontSize: 12, color: textSecondary),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Row(
                   children: [
                     if (memo.pinned == true) ...[
@@ -127,13 +216,12 @@ class MemoDetailScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBg,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         memo.visibility ?? 'PRIVATE',
-                        style: const TextStyle(
-                            fontSize: 11, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 11, color: textSecondary),
                       ),
                     ),
                     const Spacer(),
@@ -141,7 +229,6 @@ class MemoDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Rendered HTML
                 Html(
                   data: html,
                   style: {
@@ -150,35 +237,37 @@ class MemoDetailScreen extends ConsumerWidget {
                       padding: HtmlPaddings.zero,
                       fontSize: FontSize(15),
                       lineHeight: LineHeight(1.7),
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
                     'h1': Style(
                       fontSize: FontSize(22),
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
                     'h2': Style(
                       fontSize: FontSize(18),
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
                     'h3': Style(
                       fontSize: FontSize(16),
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: textColor,
                     ),
                     'code': Style(
-                      backgroundColor: AppColors.cardBg,
+                      backgroundColor: cardBg,
                       fontSize: FontSize(13),
                       fontFamily: 'monospace',
-                      color: AppColors.primaryDark,
+                      color: isDark
+                          ? const Color(0xFFFF8C6B)
+                          : AppColors.primaryDark,
                     ),
                     'pre': Style(
-                      backgroundColor: AppColors.cardBg,
+                      backgroundColor: cardBg,
                       padding: HtmlPaddings.all(12),
                     ),
                     'blockquote': Style(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                       border: const Border(
                         left: BorderSide(color: AppColors.primary, width: 3),
                       ),
@@ -189,7 +278,6 @@ class MemoDetailScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 24),
-                // Tags
                 if (memo.tags?.isNotEmpty == true)
                   Wrap(
                     spacing: 6,
@@ -229,11 +317,74 @@ class MemoDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _share(String content, String name) {
+  void _showShareOptions(BuildContext context, String content, String name) {
     final instanceUrl =
         StorageService.getString(AppConstants.memosInstanceKey) ?? '';
     final memoId = name.split('/').last;
     final deepLink = '$instanceUrl/m/$memoId';
-    Share.share('$content\n\n$deepLink');
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.content_copy_rounded),
+              title: Text(AppLocalizations.of(context).shareContentAndLink),
+              onTap: () {
+                Navigator.pop(ctx);
+                Share.share('$content\n\n$deepLink');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link_rounded),
+              title: Text(AppLocalizations.of(context).shareLinkOnly),
+              onTap: () {
+                Navigator.pop(ctx);
+                Share.share(deepLink);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(
+      BuildContext context, String imageUrl, String filename) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            title: Text(
+              filename,
+              style: const TextStyle(fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          body: Center(
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.contain,
+              httpHeaders: {
+                'Authorization':
+                    'Bearer ${StorageService.getString(AppConstants.accessTokenKey) ?? ''}',
+              },
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+              errorWidget: (context, url, error) => const Center(
+                child: Icon(Icons.broken_image_rounded,
+                    color: Colors.white, size: 48),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

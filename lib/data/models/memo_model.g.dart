@@ -20,8 +20,8 @@ MemoModel _$MemoModelFromJson(Map<String, dynamic> json) => MemoModel(
           ?.map((e) => TagModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       pinned: json['pinned'] as bool?,
-      resources: (json['resources'] as List<dynamic>?)
-          ?.map((e) => ResourceModel.fromJson(e as Map<String, dynamic>))
+      attachments: (json['attachments'] as List<dynamic>?)
+          ?.map((e) => AttachmentModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       relations: (json['relations'] as List<dynamic>?)
           ?.map((e) => RelationModel.fromJson(e as Map<String, dynamic>))
@@ -52,7 +52,7 @@ Map<String, dynamic> _$MemoModelToJson(MemoModel instance) => <String, dynamic>{
       'visibility': instance.visibility,
       'tags': instance.tags,
       'pinned': instance.pinned,
-      'resources': instance.resources,
+      'attachments': instance.attachments,
       'relations': instance.relations,
       'reactions': instance.reactions,
       'property': instance.property,
@@ -69,28 +69,28 @@ Map<String, dynamic> _$TagModelToJson(TagModel instance) => <String, dynamic>{
       'name': instance.name,
     };
 
-ResourceModel _$ResourceModelFromJson(Map<String, dynamic> json) =>
-    ResourceModel(
+AttachmentModel _$AttachmentModelFromJson(Map<String, dynamic> json) =>
+    AttachmentModel(
       name: json['name'] as String,
-      uid: json['uid'] as String?,
       createTime: json['createTime'] as String?,
       filename: json['filename'] as String?,
       content: json['content'] as String?,
       externalLink: json['externalLink'] as String?,
       type: json['type'] as String?,
-      size: (json['size'] as num?)?.toInt(),
+      size: json['size'] as String?,
+      memo: json['memo'] as String?,
     );
 
-Map<String, dynamic> _$ResourceModelToJson(ResourceModel instance) =>
+Map<String, dynamic> _$AttachmentModelToJson(AttachmentModel instance) =>
     <String, dynamic>{
       'name': instance.name,
-      'uid': instance.uid,
       'createTime': instance.createTime,
       'filename': instance.filename,
       'content': instance.content,
       'externalLink': instance.externalLink,
       'type': instance.type,
       'size': instance.size,
+      'memo': instance.memo,
     };
 
 RelationModel _$RelationModelFromJson(Map<String, dynamic> json) =>
