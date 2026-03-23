@@ -39,6 +39,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       state = const AsyncValue.data(null);
       return;
     }
+    final accessToken = StorageService.getString(AppConstants.accessTokenKey);
+    if (accessToken != null && accessToken.isNotEmpty) {
+      try {
+        final user = await _repo.getAuthStatus();
+        state = AsyncValue.data(user);
+        return;
+      } catch (_) {}
+    }
     final storedUsername = StorageService.getString(AppConstants.usernameKey);
     if (storedUsername != null && storedUsername.isNotEmpty) {
       try {
@@ -249,9 +257,49 @@ final tagsProvider = FutureProvider<Map<String, int>>((ref) {
   return ref.watch(memosRepositoryProvider).listTags();
 });
 
-// ── Single memo ───────────────────────────────────────────────────────────────
+// ── Single memo ───────────────────────────────────────────────────────
 
 final memoDetailProvider =
     FutureProvider.family<MemoModel?, String>((ref, name) {
   return ref.watch(memosRepositoryProvider).getMemo(name);
+});
+
+// ── Shares ──────────────────────────────────────────────────────────────────────
+
+final memoSharesProvider =
+    FutureProvider.family<List<ShareModel>, String>((ref, memoName) {
+  return ref.watch(memosRepositoryProvider).listMemoShares(memoName);
+});
+
+final sharedMemoProvider =
+    FutureProvider.family<MemoModel?, String>((ref, shareId) {
+  return ref.watch(memosRepositoryProvider).getMemoByShare(shareId);
+});
+
+class ShareNotifier extends StateNotifier<AsyncValue<ShareModel?>> {
+  final MemosRepository _repo;
+
+  ShareNotifier(this._repo) : super(const AsyncValue.data(null));
+
+  Future<ShareModel?> createShare(String memoName, {String? expireTime}) async {
+    state = const AsyncValue.loading();
+    try {
+      final share =
+          await _repo.createMemoShare(memoName, expireTime: expireTime);
+      state = AsyncValue.data(share);
+      return share;
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+      return null;
+    }
+  }
+
+  Future<void> deleteShare(String shareName) async {
+    await _repo.deleteMemoShare(shareName);
+  }
+}
+
+final shareNotifierProvider =
+    StateNotifierProvider<ShareNotifier, AsyncValue<ShareModel?>>((ref) {
+  return ShareNotifier(ref.watch(memosRepositoryProvider));
 });

@@ -164,3 +164,16 @@ Map<String, dynamic> _$ListMemosResponseToJson(ListMemosResponse instance) =>
       'memos': instance.memos,
       'nextPageToken': instance.nextPageToken,
     };
+
+ShareModel _$ShareModelFromJson(Map<String, dynamic> json) => ShareModel(
+      name: json['name'] as String,
+      createTime: json['createTime'] as String?,
+      expireTime: json['expireTime'] as String?,
+    );
+
+Map<String, dynamic> _$ShareModelToJson(ShareModel instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'createTime': instance.createTime,
+      'expireTime': instance.expireTime,
+    };

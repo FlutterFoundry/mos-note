@@ -18,7 +18,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get signInWithToken => 'Masuk dengan Token Akses Pribadi Anda';
 
   @override
+  String get signInWithCredentials => 'Masuk dengan kredensial Anda';
+
+  @override
   String get personalAccessToken => 'Token Akses Pribadi';
+
+  @override
+  String get credentials => 'Kredensial';
+
+  @override
+  String get token => 'Token';
+
+  @override
+  String get password => 'Kata Sandi';
+
+  @override
+  String get enterUsername => 'Masukkan nama pengguna Anda';
+
+  @override
+  String get enterPassword => 'Masukkan kata sandi Anda';
 
   @override
   String get pasteTokenHere => 'Tempel token Anda di sini';

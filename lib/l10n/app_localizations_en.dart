@@ -18,7 +18,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInWithToken => 'Sign in with your Personal Access Token';
 
   @override
+  String get signInWithCredentials => 'Sign in with your credentials';
+
+  @override
   String get personalAccessToken => 'Personal Access Token';
+
+  @override
+  String get credentials => 'Credentials';
+
+  @override
+  String get token => 'Token';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get enterUsername => 'Enter your username';
+
+  @override
+  String get enterPassword => 'Enter your password';
 
   @override
   String get pasteTokenHere => 'Paste your token here';

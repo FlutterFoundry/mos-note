@@ -9,6 +9,7 @@ import '../../presentation/screens/login/login_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/editor/editor_screen.dart';
 import '../../presentation/screens/detail/memo_detail_screen.dart';
+import '../../presentation/screens/detail/shared_memo_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/comments/comments_screen.dart';
 
@@ -102,6 +103,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/s/:shareId',
+        name: 'shared-memo',
+        builder: (context, state) {
+          final shareId = state.pathParameters['shareId']!;
+          return SharedMemoScreen(shareId: shareId);
+        },
       ),
     ],
   );

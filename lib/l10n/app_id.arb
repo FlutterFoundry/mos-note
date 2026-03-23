@@ -4,7 +4,13 @@
   
   "welcomeBack": "Selamat datang kembali",
   "signInWithToken": "Masuk dengan Token Akses Pribadi Anda",
+  "signInWithCredentials": "Masuk dengan kredensial Anda",
   "personalAccessToken": "Token Akses Pribadi",
+  "credentials": "Kredensial",
+  "token": "Token",
+  "password": "Kata Sandi",
+  "enterUsername": "Masukkan nama pengguna Anda",
+  "enterPassword": "Masukkan kata sandi Anda",
   "pasteTokenHere": "Tempel token Anda di sini",
   "enterAccessToken": "Masukkan token akses Anda",
   "signIn": "Masuk",

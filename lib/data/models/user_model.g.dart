@@ -51,11 +51,15 @@ SignInResponse _$SignInResponseFromJson(Map<String, dynamic> json) =>
       user: json['user'] == null
           ? null
           : UserModel.fromJson(json['user'] as Map<String, dynamic>),
+      accessToken: json['accessToken'] as String?,
+      accessTokenExpiresAt: json['accessTokenExpiresAt'] as String?,
       error: json['error'] as String?,
     );
 
 Map<String, dynamic> _$SignInResponseToJson(SignInResponse instance) =>
     <String, dynamic>{
       'user': instance.user,
+      'accessToken': instance.accessToken,
+      'accessTokenExpiresAt': instance.accessTokenExpiresAt,
       'error': instance.error,
     };

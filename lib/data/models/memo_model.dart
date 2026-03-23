@@ -155,3 +155,20 @@ class ListMemosResponse {
       _$ListMemosResponseFromJson(json);
   Map<String, dynamic> toJson() => _$ListMemosResponseToJson(this);
 }
+
+@JsonSerializable()
+class ShareModel {
+  final String name;
+  final String? createTime;
+  final String? expireTime;
+  const ShareModel({
+    required this.name,
+    this.createTime,
+    this.expireTime,
+  });
+  factory ShareModel.fromJson(Map<String, dynamic> json) =>
+      _$ShareModelFromJson(json);
+  Map<String, dynamic> toJson() => _$ShareModelToJson(this);
+
+  String get shareId => name.split('/').last;
+}

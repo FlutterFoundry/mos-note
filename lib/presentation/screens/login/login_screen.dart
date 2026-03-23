@@ -15,14 +15,20 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tokenController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _obscureToken = true;
+  bool _obscurePassword = true;
   bool _loading = false;
+  bool _useCredentials = true;
   String? _error;
 
   @override
   void dispose() {
     _tokenController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -35,15 +41,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await ref.read(authStateProvider.notifier).signInWithToken(
-            _tokenController.text.trim(),
-          );
+      if (_useCredentials) {
+        await ref.read(authStateProvider.notifier).signIn(
+              _usernameController.text.trim(),
+              _passwordController.text,
+            );
+      } else {
+        await ref.read(authStateProvider.notifier).signInWithToken(
+              _tokenController.text.trim(),
+            );
+      }
       if (mounted) context.go('/home');
     } catch (e) {
       final raw = e.toString();
       final message = raw.contains('Exception:')
           ? raw.replaceFirst('Exception: ', '')
-          : 'Invalid access token. Make sure it has not expired.';
+          : 'Authentication failed. Please try again.';
       setState(() {
         _error = message;
         _loading = false;
@@ -74,46 +87,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                loc.signInWithToken,
+                _useCredentials
+                    ? loc.signInWithCredentials
+                    : loc.signInWithToken,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? AppColors.darkTextSecondary
                           : AppColors.textSecondary,
                     ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
-              // Token form
-              Form(
-                key: _formKey,
-                child: TextFormField(
-                  controller: _tokenController,
-                  obscureText: _obscureToken,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.go,
-                  onFieldSubmitted: (_) => _signIn(),
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: loc.personalAccessToken,
-                    hintText: loc.pasteTokenHere,
-                    prefixIcon: const Icon(Icons.key_rounded),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureToken
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscureToken = !_obscureToken),
-                    ),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? loc.enterAccessToken
-                      : null,
+              // Login method toggle
+              Center(
+                child: SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(value: true, label: Text(loc.credentials)),
+                    ButtonSegment(value: false, label: Text(loc.token)),
+                  ],
+                  selected: {_useCredentials},
+                  onSelectionChanged: (v) => setState(() {
+                    _useCredentials = v.first;
+                    _error = null;
+                  }),
                 ),
               ),
+              const SizedBox(height: 24),
 
-              // Error banner
+              Form(
+                key: _formKey,
+                child: _useCredentials
+                    ? _buildCredentialsForm(loc)
+                    : _buildTokenForm(loc),
+              ),
+
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -154,20 +161,88 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : Text(loc.signIn),
               ),
 
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  loc.tokenHelp,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+              if (!_useCredentials) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    loc.tokenHelp,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCredentialsForm(AppLocalizations loc) {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _usernameController,
+          autocorrect: false,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: loc.username,
+            prefixIcon: const Icon(Icons.person_outline),
+          ),
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? loc.enterUsername : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _passwordController,
+          obscureText: _obscurePassword,
+          autocorrect: false,
+          textInputAction: TextInputAction.go,
+          onFieldSubmitted: (_) => _signIn(),
+          decoration: InputDecoration(
+            labelText: loc.password,
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          validator: (v) => v == null || v.isEmpty ? loc.enterPassword : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTokenForm(AppLocalizations loc) {
+    return TextFormField(
+      controller: _tokenController,
+      obscureText: _obscureToken,
+      autocorrect: false,
+      textInputAction: TextInputAction.go,
+      onFieldSubmitted: (_) => _signIn(),
+      style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+      decoration: InputDecoration(
+        labelText: loc.personalAccessToken,
+        hintText: loc.pasteTokenHere,
+        prefixIcon: const Icon(Icons.key_rounded),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscureToken
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+          ),
+          onPressed: () => setState(() => _obscureToken = !_obscureToken),
+        ),
+      ),
+      validator: (v) =>
+          v == null || v.trim().isEmpty ? loc.enterAccessToken : null,
     );
   }
 }

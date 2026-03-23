@@ -11,9 +11,12 @@ class MemosApi {
   MemosApi(this._dio);
 
   // Auth
-  Future<UserModel> signIn(Map<String, dynamic> body) async {
-    final res = await _dio.post('/api/v1/auth/signin', data: body);
-    return UserModel.fromJson(res.data as Map<String, dynamic>);
+  Future<SignInResponse> signInWithCredentials(
+      String username, String password) async {
+    final res = await _dio.post('/api/v1/auth/signin', data: {
+      'passwordCredentials': {'username': username, 'password': password},
+    });
+    return SignInResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<void> signOut() async {
@@ -21,8 +24,9 @@ class MemosApi {
   }
 
   Future<UserModel> getAuthStatus() async {
-    final res = await _dio.get('/api/v1/auth/status');
-    return UserModel.fromJson(res.data as Map<String, dynamic>);
+    final res = await _dio.get('/api/v1/auth/me');
+    final data = res.data as Map<String, dynamic>;
+    return UserModel.fromJson(data['user'] as Map<String, dynamic>);
   }
 
   // Memos
@@ -167,5 +171,36 @@ class MemosApi {
   Future<Map<String, dynamic>> listTags() async {
     final res = await _dio.get('/api/v1/memos:listTags');
     return res.data as Map<String, dynamic>;
+  }
+
+  // Shares
+  Future<ShareModel> createMemoShare(
+    String memoName, {
+    String? expireTime,
+  }) async {
+    final memoId = memoName.split('/').last;
+    final res = await _dio.post(
+      '/api/v1/memos/$memoId/shares',
+      data: {if (expireTime != null) 'expireTime': expireTime},
+    );
+    return ShareModel.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<MemoModel> getMemoByShare(String shareId) async {
+    final res = await _dio.get('/api/v1/shares/$shareId');
+    return MemoModel.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteMemoShare(String shareName) async {
+    await _dio.delete('/api/v1/$shareName');
+  }
+
+  Future<List<ShareModel>> listMemoShares(String memoName) async {
+    final memoId = memoName.split('/').last;
+    final res = await _dio.get('/api/v1/memos/$memoId/shares');
+    final shares = (res.data as List)
+        .map((s) => ShareModel.fromJson(s as Map<String, dynamic>))
+        .toList();
+    return shares;
   }
 }

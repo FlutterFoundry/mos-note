@@ -52,8 +52,11 @@ class SignInRequest {
 @JsonSerializable()
 class SignInResponse {
   final UserModel? user;
+  final String? accessToken;
+  final String? accessTokenExpiresAt;
   final String? error;
-  const SignInResponse({this.user, this.error});
+  const SignInResponse(
+      {this.user, this.accessToken, this.accessTokenExpiresAt, this.error});
   factory SignInResponse.fromJson(Map<String, dynamic> json) =>
       _$SignInResponseFromJson(json);
   Map<String, dynamic> toJson() => _$SignInResponseToJson(this);

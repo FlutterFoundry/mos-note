@@ -4,7 +4,13 @@
   
   "welcomeBack": "Welcome back",
   "signInWithToken": "Sign in with your Personal Access Token",
+  "signInWithCredentials": "Sign in with your credentials",
   "personalAccessToken": "Personal Access Token",
+  "credentials": "Credentials",
+  "token": "Token",
+  "password": "Password",
+  "enterUsername": "Enter your username",
+  "enterPassword": "Enter your password",
   "pasteTokenHere": "Paste your token here",
   "enterAccessToken": "Enter your access token",
   "signIn": "Sign In",

@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/storage_service.dart';
-import '../../core/utils/jwt_utils.dart';
 import '../local/dao/memo_dao.dart';
 import '../local/dao/pending_ops_dao.dart';
 import '../models/memo_model.dart';
@@ -31,17 +30,26 @@ class MemosRepository {
 
   Future<UserModel> signIn(String username, String password) async {
     try {
-      final user = await _api.signIn({
-        'username': username,
-        'password': password,
-      });
+      final response = await _api.signInWithCredentials(username, password);
+      if (response.user == null) {
+        throw Exception('Login failed. Please check your credentials.');
+      }
+      final user = response.user!;
+      if (response.accessToken != null) {
+        await StorageService.setString(
+            AppConstants.accessTokenKey, response.accessToken!);
+        refreshApi();
+      }
       await StorageService.setString(AppConstants.userIdKey, user.userId);
       await StorageService.setString(AppConstants.usernameKey, user.username);
       return user;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Invalid username or password.');
+      }
       if (e.response?.statusCode == 404) {
         throw Exception(
-          'This Memos instance does not support password sign-in via the REST API. '
+          'This Memos instance does not support password sign-in. '
           'Please use a Personal Access Token instead.',
         );
       }
@@ -49,23 +57,15 @@ class MemosRepository {
     }
   }
 
-  /// Sign in using a Personal Access Token (PAT).
+  /// Sign in using a Personal Access Token (PAT) or JWT access token.
   Future<UserModel> signInWithToken(String token) async {
-    final payload = decodeJwtPayload(token);
-    if (payload == null) {
-      throw Exception('Malformed access token.');
-    }
-    final username = payload['name'] as String?;
-    if (username == null || username.isEmpty) {
-      throw Exception('Token does not contain a username claim.');
-    }
-
     await StorageService.setString(AppConstants.accessTokenKey, token);
     await StorageService.remove(AppConstants.authTokenKey);
     refreshApi();
 
     try {
-      final user = await _api.getUserByUsername(username);
+      // Try to get user info from auth status endpoint
+      final user = await _api.getAuthStatus();
       await StorageService.setString(AppConstants.userIdKey, user.userId);
       await StorageService.setString(AppConstants.usernameKey, user.username);
       return user;
@@ -348,5 +348,23 @@ class MemosRepository {
       await MemoDao.clearAll(); // preserves is_local_only rows
       await MemoDao.upsertMemos(response.memos);
     } catch (_) {}
+  }
+
+  // ── Shares ──────────────────────────────────────────────────────────────────
+
+  Future<ShareModel> createMemoShare(String memoName, {String? expireTime}) {
+    return _api.createMemoShare(memoName, expireTime: expireTime);
+  }
+
+  Future<MemoModel> getMemoByShare(String shareId) {
+    return _api.getMemoByShare(shareId);
+  }
+
+  Future<void> deleteMemoShare(String shareName) {
+    return _api.deleteMemoShare(shareName);
+  }
+
+  Future<List<ShareModel>> listMemoShares(String memoName) {
+    return _api.listMemoShares(memoName);
   }
 }

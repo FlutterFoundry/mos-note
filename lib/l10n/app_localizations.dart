@@ -116,11 +116,47 @@ abstract class AppLocalizations {
   /// **'Sign in with your Personal Access Token'**
   String get signInWithToken;
 
+  /// No description provided for @signInWithCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your credentials'**
+  String get signInWithCredentials;
+
   /// No description provided for @personalAccessToken.
   ///
   /// In en, this message translates to:
   /// **'Personal Access Token'**
   String get personalAccessToken;
+
+  /// No description provided for @credentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials'**
+  String get credentials;
+
+  /// No description provided for @token.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get token;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @enterUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username'**
+  String get enterUsername;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get enterPassword;
 
   /// No description provided for @pasteTokenHere.
   ///
