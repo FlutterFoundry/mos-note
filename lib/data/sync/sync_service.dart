@@ -122,8 +122,7 @@ class SyncService {
   /// temp value to the real server ID via [PendingOpsDao.updateMemoId].
   Future<void> _handleUploadAttachment(PendingOp op) async {
     // Re-read to pick up any memo_id update that happened in this same batch.
-    final all = await PendingOpsDao.getAll();
-    final fresh = all.firstWhere((o) => o.id == op.id, orElse: () => op);
+    final fresh = await PendingOpsDao.getById(op.id) ?? op;
     final memoId = fresh.memoId;
 
     if (memoId == null || memoId.startsWith('local_')) {
