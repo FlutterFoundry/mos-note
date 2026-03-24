@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import '../db/local_database.dart';
 
-enum PendingOpType { create, update, delete }
+enum PendingOpType { create, update, delete, uploadAttachment }
 
 class PendingOp {
   final int? id;
@@ -49,6 +49,18 @@ class PendingOpsDao {
     return db.insert('pending_ops', op.toRow());
   }
 
+  static Future<PendingOp?> getById(int id) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return PendingOp.fromRow(rows.first);
+  }
+
   static Future<List<PendingOp>> getAll() async {
     final db = await _db;
     final rows = await db.query('pending_ops', orderBy: 'created_at ASC');
@@ -73,10 +85,33 @@ class PendingOpsDao {
         [id]);
   }
 
+  /// Returns all ops for a given memoId.
+  static Future<List<PendingOp>> getByMemoId(String memoId) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      where: 'memo_id = ?',
+      whereArgs: [memoId],
+    );
+    return rows.map(PendingOp.fromRow).toList();
+  }
+
   /// Remove all ops for a given local/server memoId.
   static Future<void> deleteForMemo(String memoId) async {
     final db = await _db;
     await db.delete('pending_ops', where: 'memo_id = ?', whereArgs: [memoId]);
+  }
+
+  /// Updates memo_id on all ops that reference [oldId] to [newId].
+  /// Called after a successful create sync to remap temp IDs to server IDs.
+  static Future<void> updateMemoId(String oldId, String newId) async {
+    final db = await _db;
+    await db.update(
+      'pending_ops',
+      {'memo_id': newId},
+      where: 'memo_id = ?',
+      whereArgs: [oldId],
+    );
   }
 
   static Future<void> clearAll() async {

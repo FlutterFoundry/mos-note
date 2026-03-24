@@ -29,7 +29,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return authState.when(
           data: (user) => user != null ? '/home' : '/login',
           loading: () => null,
-          error: (_, __) => '/login',
+          error: (_, __) {
+            // If we have offline credentials, allow staying on instance setup
+            if (StorageService.hasOfflineCredentials()) return null;
+            return '/login';
+          },
         );
       }
 
@@ -38,6 +42,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (user == null &&
               state.matchedLocation != '/login' &&
               state.matchedLocation != '/instance-setup') {
+            // Check if we have offline credentials before redirecting
+            if (StorageService.hasOfflineCredentials()) return null;
             return '/login';
           }
           if (user != null && state.matchedLocation == '/login') {
@@ -46,7 +52,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           return null;
         },
         loading: () => null,
-        error: (_, __) => '/login',
+        error: (_, __) {
+          // If we have offline credentials, don't redirect to login
+          if (StorageService.hasOfflineCredentials()) return null;
+          return '/login';
+        },
       );
     },
     routes: [

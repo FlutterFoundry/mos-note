@@ -157,22 +157,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   Future<void> _uploadAttachment(File file) async {
-    final online = await Connectivity().checkConnectivity();
-    final isOffline =
-        online.isEmpty || online.contains(ConnectivityResult.none);
-
-    if (isOffline) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cannot upload attachments while offline'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-      return;
-    }
-
     setState(() => _uploading = true);
 
     try {
@@ -187,7 +171,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Attachment uploaded'),
+            content: Text('Attachment added'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -197,7 +181,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload: $e'),
+            content: Text('Failed to add attachment: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -248,7 +232,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         if (existingNames != currentNames && _attachments.isNotEmpty) {
           await ref.read(memosRepositoryProvider).setMemoAttachments(
                 memoName,
-                _attachments.map((a) => a.name).toList(),
+                _attachments,
               );
         }
 
@@ -395,6 +379,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 itemCount: _attachments.length,
                 itemBuilder: (context, index) {
                   final att = _attachments[index];
+                  final isLocalPending =
+                      att.name.startsWith('attachments/local_');
                   final instanceUrl =
                       StorageService.getString(AppConstants.memosInstanceKey) ??
                           '';
@@ -403,6 +389,48 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   final imageUrl =
                       '$instanceUrl/file/attachments/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
                   final isImage = att.type?.startsWith('image/') == true;
+
+                  Widget imageChild;
+                  if (isImage && isLocalPending && att.externalLink != null) {
+                    imageChild = ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(att.externalLink!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, _, __) => Icon(
+                          Icons.broken_image_rounded,
+                          color: textSecondary,
+                        ),
+                      ),
+                    );
+                  } else if (isImage) {
+                    imageChild = ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        httpHeaders: {
+                          'Authorization':
+                              'Bearer ${StorageService.getString(AppConstants.accessTokenKey) ?? ''}',
+                        },
+                        placeholder: (ctx, url) => const Center(
+                          child:
+                              CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (ctx, url, error) => Icon(
+                          Icons.broken_image_rounded,
+                          color: textSecondary,
+                        ),
+                      ),
+                    );
+                  } else {
+                    imageChild = Center(
+                      child: Icon(
+                        Icons.attach_file_rounded,
+                        color: textSecondary,
+                      ),
+                    );
+                  }
 
                   return Stack(
                     children: [
@@ -414,32 +442,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                           color: cardBg,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: isImage
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: imageUrl,
-                                  fit: BoxFit.cover,
-                                  httpHeaders: {
-                                    'Authorization':
-                                        'Bearer ${StorageService.getString(AppConstants.accessTokenKey) ?? ''}',
-                                  },
-                                  placeholder: (ctx, url) => const Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                  errorWidget: (ctx, url, error) => Icon(
-                                    Icons.broken_image_rounded,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.attach_file_rounded,
-                                  color: textSecondary,
-                                ),
-                              ),
+                        child: imageChild,
                       ),
                       Positioned(
                         top: 4,

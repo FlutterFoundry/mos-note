@@ -258,15 +258,125 @@ class MemosRepository {
 
   // ── Attachments ────────────────────────────────────────────────────────
 
-  // ── Attachments ────────────────────────────────────────────────────────
-
+  /// Uploads a file attachment.
+  ///
+  /// When online the file is sent to the server and the returned
+  /// [AttachmentModel] carries a real server name.  When offline a local
+  /// placeholder is returned whose `name` begins with `attachments/local_`
+  /// and whose `externalLink` holds the local file path.  A pending
+  /// [PendingOpType.uploadAttachment] op is queued so the upload is
+  /// retried once connectivity is restored.
   Future<AttachmentModel> uploadAttachment(String filePath) async {
-    return _api.uploadAttachment(filePath);
+    final online = await _isOnline;
+    if (online) {
+      return _api.uploadAttachment(filePath);
+    }
+
+    final filename = filePath.split('/').last;
+    final ext = filename.toLowerCase().split('.').last;
+    String mimeType = 'application/octet-stream';
+    switch (ext) {
+      case 'jpg' || 'jpeg':
+        mimeType = 'image/jpeg';
+      case 'png':
+        mimeType = 'image/png';
+      case 'gif':
+        mimeType = 'image/gif';
+      case 'webp':
+        mimeType = 'image/webp';
+      case 'pdf':
+        mimeType = 'application/pdf';
+    }
+
+    final tempName =
+        'attachments/local_${DateTime.now().millisecondsSinceEpoch}';
+    return AttachmentModel(
+      name: tempName,
+      filename: filename,
+      type: mimeType,
+      externalLink: filePath,
+    );
   }
 
+  /// Links [attachments] to [memoName].
+  ///
+  /// - Updates the local DB cache so the memo is readable offline.
+  /// - For each local-placeholder attachment (name starts with
+  ///   `attachments/local_`) a pending [PendingOpType.uploadAttachment] op
+  ///   is queued so the file is uploaded and linked once online.  Duplicate
+  ///   ops (same memoId + tempAttachmentName) are skipped to prevent
+  ///   multiple uploads of the same file.
+  /// - For server attachments the API call is attempted immediately when
+  ///   online.  If offline or the call fails, a `linkExisting` pending op is
+  ///   queued for retry on the next sync.
   Future<void> setMemoAttachments(
-      String memoName, List<String> attachmentNames) async {
-    return _api.setMemoAttachments(memoName, attachmentNames);
+    String memoName,
+    List<AttachmentModel> attachments,
+  ) async {
+    final memoId = memoName.split('/').last;
+
+    await MemoDao.updateAttachments(memoId, attachments);
+
+    // Load existing pending ops for this memo once, to check for duplicates.
+    final existingOps = await PendingOpsDao.getByMemoId(memoId);
+    final queuedTempNames = existingOps
+        .where((o) => o.opType == PendingOpType.uploadAttachment)
+        .map((o) => o.payload['tempAttachmentName'] as String?)
+        .whereType<String>()
+        .toSet();
+
+    for (final att in attachments) {
+      if (att.name.startsWith('attachments/local_') &&
+          att.externalLink != null &&
+          !queuedTempNames.contains(att.name)) {
+        await PendingOpsDao.enqueue(PendingOp(
+          opType: PendingOpType.uploadAttachment,
+          memoId: memoId,
+          payload: {
+            'filePath': att.externalLink,
+            'filename': att.filename,
+            'mimeType': att.type,
+            'tempAttachmentName': att.name,
+          },
+          createdAt: DateTime.now(),
+        ));
+      }
+    }
+
+    final serverNames = attachments
+        .where((a) => !a.name.startsWith('attachments/local_'))
+        .map((a) => a.name)
+        .toList();
+
+    final online = await _isOnline;
+    if (online && serverNames.isNotEmpty) {
+      try {
+        await _api.setMemoAttachments(memoName, serverNames);
+        // Successfully linked attachments on the server; nothing more to do.
+        return;
+      } catch (_) {
+        // Fall through to queue a pending op so that server-side linking
+        // can be retried later.
+      }
+    }
+
+    // If we're offline or the online call failed, ensure we queue a pending
+    // operation so that the server-side attachment list can be synchronized
+    // with the local state later.
+    if (serverNames.isNotEmpty) {
+      await PendingOpsDao.enqueue(PendingOp(
+        opType: PendingOpType.uploadAttachment,
+        memoId: memoId,
+        payload: {
+          // Indicates this op is for linking already-uploaded attachments,
+          // not for uploading new files.
+          'action': 'linkExisting',
+          'memoName': memoName,
+          'attachmentNames': serverNames,
+        },
+        createdAt: DateTime.now(),
+      ));
+    }
   }
 
   Future<List<AttachmentModel>> listMemoAttachments(String memoName) async {
@@ -330,10 +440,14 @@ class MemosRepository {
   // ── Tags ──────────────────────────────────────────────────────────────────
 
   Future<Map<String, int>> listTags() async {
-    final response = await _api.listTags();
-    final tagAmounts = response['tagAmounts'] as Map<String, dynamic>?;
-    if (tagAmounts == null) return {};
-    return tagAmounts.map((k, v) => MapEntry(k, (v as num).toInt()));
+    try {
+      final response = await _api.listTags();
+      final tagAmounts = response['tagAmounts'] as Map<String, dynamic>?;
+      if (tagAmounts == null) return {};
+      return tagAmounts.map((k, v) => MapEntry(k, (v as num).toInt()));
+    } catch (_) {
+      return {};
+    }
   }
 
   // ── Sync ──────────────────────────────────────────────────────────────────
