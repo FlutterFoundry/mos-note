@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/images/mos_notes_icon.png" alt="Memos Note Icon" width="128">
+</div>
+
 # Memos Note
 
 A Flutter client for [Memos](https://github.com/usememos/memos) - An open source, self-hosted note taking and knowledge base application.
