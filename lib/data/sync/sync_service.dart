@@ -122,7 +122,8 @@ class SyncService {
   /// temp value to the real server ID via [PendingOpsDao.updateMemoId].
   Future<void> _handleUploadAttachment(PendingOp op) async {
     // Re-read to pick up any memo_id update that happened in this same batch.
-    final fresh = await PendingOpsDao.getById(op.id) ?? op;
+    final fresh =
+        op.id != null ? (await PendingOpsDao.getById(op.id!) ?? op) : op;
     final memoId = fresh.memoId;
 
     if (memoId == null || memoId.startsWith('local_')) {
@@ -147,8 +148,8 @@ class SyncService {
     }
 
     final attachments = memo.attachments ?? [];
-    final hasPlaceholder = tempName != null &&
-        attachments.any((a) => a.name == tempName);
+    final hasPlaceholder =
+        tempName != null && attachments.any((a) => a.name == tempName);
     if (!hasPlaceholder) {
       // The pending attachment placeholder no longer exists on this memo;
       // skip the upload so we don't create an orphaned server attachment.

@@ -49,6 +49,18 @@ class PendingOpsDao {
     return db.insert('pending_ops', op.toRow());
   }
 
+  static Future<PendingOp?> getById(int id) async {
+    final db = await _db;
+    final rows = await db.query(
+      'pending_ops',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return PendingOp.fromRow(rows.first);
+  }
+
   static Future<List<PendingOp>> getAll() async {
     final db = await _db;
     final rows = await db.query('pending_ops', orderBy: 'created_at ASC');
