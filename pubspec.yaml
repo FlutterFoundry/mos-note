@@ -63,6 +63,15 @@ dev_dependencies:
   build_runner: ^2.4.12
   json_serializable: ^6.8.0
   riverpod_generator: ^2.4.3
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/mos_notes_icon.png"
+  adaptive_icon_background: "#E87722"
+  adaptive_icon_foreground: "assets/images/mos_notes_icon.png"
+  remove_alpha_ios: true
 
 flutter:
   generate: true
