@@ -85,16 +85,6 @@ class PendingOpsDao {
         [id]);
   }
 
-  /// Fetches a single pending op by its primary key, or `null` if not found.
-  static Future<PendingOp?> getById(int? id) async {
-    if (id == null) return null;
-    final db = await _db;
-    final rows =
-        await db.query('pending_ops', where: 'id = ?', whereArgs: [id]);
-    if (rows.isEmpty) return null;
-    return PendingOp.fromRow(rows.first);
-  }
-
   /// Returns all ops for a given memoId.
   static Future<List<PendingOp>> getByMemoId(String memoId) async {
     final db = await _db;

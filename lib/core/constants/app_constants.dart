@@ -5,6 +5,9 @@ class AppConstants {
   static const accessTokenKey = 'access_token'; // personal access token (PAT)
   static const userIdKey = 'user_id';
   static const usernameKey = 'username';
+  static const userNicknameKey = 'user_nickname';
+  static const userEmailKey = 'user_email';
+  static const userRoleKey = 'user_role';
   static const themeKey = 'theme_mode';
   static const localeKey = 'app_locale';
 

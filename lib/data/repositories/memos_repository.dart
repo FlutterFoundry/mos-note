@@ -440,10 +440,14 @@ class MemosRepository {
   // ── Tags ──────────────────────────────────────────────────────────────────
 
   Future<Map<String, int>> listTags() async {
-    final response = await _api.listTags();
-    final tagAmounts = response['tagAmounts'] as Map<String, dynamic>?;
-    if (tagAmounts == null) return {};
-    return tagAmounts.map((k, v) => MapEntry(k, (v as num).toInt()));
+    try {
+      final response = await _api.listTags();
+      final tagAmounts = response['tagAmounts'] as Map<String, dynamic>?;
+      if (tagAmounts == null) return {};
+      return tagAmounts.map((k, v) => MapEntry(k, (v as num).toInt()));
+    } catch (_) {
+      return {};
+    }
   }
 
   // ── Sync ──────────────────────────────────────────────────────────────────

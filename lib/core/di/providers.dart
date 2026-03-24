@@ -33,28 +33,56 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     _checkAuth();
   }
 
+  Future<bool> _isOnline() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      return results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<void> _checkAuth() async {
     final instanceUrl = StorageService.getString(AppConstants.memosInstanceKey);
     if (instanceUrl == null || instanceUrl.isEmpty) {
       state = const AsyncValue.data(null);
       return;
     }
+
     final accessToken = StorageService.getString(AppConstants.accessTokenKey);
-    if (accessToken != null && accessToken.isNotEmpty) {
+    final online = await _isOnline();
+
+    // Try online validation if connected
+    if (online && accessToken != null && accessToken.isNotEmpty) {
       try {
         final user = await _repo.getAuthStatus();
-        state = AsyncValue.data(user);
-        return;
+        if (user != null) {
+          await StorageService.cacheUser(user);
+          state = AsyncValue.data(user);
+          return;
+        }
       } catch (_) {}
     }
+
     final storedUsername = StorageService.getString(AppConstants.usernameKey);
-    if (storedUsername != null && storedUsername.isNotEmpty) {
+    if (online && storedUsername != null && storedUsername.isNotEmpty) {
       try {
         final user = await _repo.getUserByUsername(storedUsername);
+        await StorageService.cacheUser(user);
         state = AsyncValue.data(user);
         return;
       } catch (_) {}
     }
+
+    // Offline fallback: use cached user if credentials exist
+    if (accessToken != null && accessToken.isNotEmpty) {
+      final cachedUser = StorageService.getCachedUser();
+      if (cachedUser != null) {
+        state = AsyncValue.data(cachedUser);
+        return;
+      }
+    }
+
     state = const AsyncValue.data(null);
   }
 
@@ -62,6 +90,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       final user = await _repo.signIn(username, password);
+      await StorageService.cacheUser(user);
       state = AsyncValue.data(user);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -72,6 +101,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       final user = await _repo.signInWithToken(token);
+      await StorageService.cacheUser(user);
       state = AsyncValue.data(user);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -80,6 +110,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 
   Future<void> signOut() async {
     await _repo.signOut();
+    await StorageService.clearCachedUser();
     state = const AsyncValue.data(null);
   }
 

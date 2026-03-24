@@ -111,8 +111,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   radius: 18,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                   child: Text(
-                    (user?.displayName.isNotEmpty == true
-                        ? user!.displayName[0].toUpperCase()
+                    (user?.displayNameValue.isNotEmpty == true
+                        ? user!.displayNameValue[0].toUpperCase()
                         : 'U'),
                     style: const TextStyle(
                       color: AppColors.primary,

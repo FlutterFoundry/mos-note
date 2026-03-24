@@ -13,6 +13,8 @@ class UserModel {
   final String username;
   final String? email;
   final String? nickname;
+  @JsonKey(name: 'displayName')
+  final String? displayName;
   final String? avatarUrl;
   final String? description;
 
@@ -26,6 +28,7 @@ class UserModel {
     required this.username,
     this.email,
     this.nickname,
+    this.displayName,
     this.avatarUrl,
     this.description,
   });
@@ -35,7 +38,9 @@ class UserModel {
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
-  String get displayName => nickname?.isNotEmpty == true ? nickname! : username;
+  String get displayNameValue => displayName?.isNotEmpty == true
+      ? displayName!
+      : (nickname?.isNotEmpty == true ? nickname! : username);
   String get userId => name.split('/').last;
 }
 

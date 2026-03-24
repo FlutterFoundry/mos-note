@@ -42,7 +42,7 @@ class ProfileScreen extends ConsumerWidget {
                           : null,
                       child: user.avatarUrl?.isNotEmpty != true
                           ? Text(
-                              user.displayName[0].toUpperCase(),
+                              user.displayNameValue[0].toUpperCase(),
                               style: const TextStyle(
                                 fontSize: 32,
                                 color: AppColors.primary,
@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      user.displayName,
+                      user.displayNameValue,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     if (user.email?.isNotEmpty == true) ...[
