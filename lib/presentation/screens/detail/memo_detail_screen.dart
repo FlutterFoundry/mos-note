@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -140,6 +141,8 @@ class _MemoDetailScreenState extends ConsumerState<MemoDetailScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: memo.attachments!.map((att) {
+                      final isLocalPending =
+                          att.name.startsWith('attachments/local_');
                       final instanceUrl = StorageService.getString(
                               AppConstants.memosInstanceKey) ??
                           '';
@@ -149,7 +152,24 @@ class _MemoDetailScreenState extends ConsumerState<MemoDetailScreen> {
                           '$instanceUrl/file/attachments/$attachmentId/${Uri.encodeComponent(att.filename ?? 'file')}';
                       final isImage = att.type?.startsWith('image/') == true;
 
-                      if (isImage) {
+                      if (isImage && isLocalPending && att.externalLink != null) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            File(att.externalLink!),
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, _, __) => Container(
+                              width: 120,
+                              height: 120,
+                              color: AppColors.cardBg,
+                              child: const Icon(Icons.broken_image_rounded,
+                                  color: AppColors.textSecondary),
+                            ),
+                          ),
+                        );
+                      } else if (isImage) {
                         return GestureDetector(
                           onTap: () => _showFullScreenImage(
                               context, imageUrl, att.filename ?? 'image'),

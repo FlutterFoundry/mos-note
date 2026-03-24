@@ -107,6 +107,24 @@ class MemoDao {
     await upsertMemo(serverMemo, isLocalOnly: false);
   }
 
+  /// Updates only the `attachments_json` column for a memo, preserving all
+  /// other fields (including the `is_local_only` flag).
+  static Future<void> updateAttachments(
+    String memoId,
+    List<AttachmentModel> attachments,
+  ) async {
+    final db = await _db;
+    await db.update(
+      'memos',
+      {
+        'attachments_json':
+            jsonEncode(attachments.map((a) => a.toJson()).toList()),
+      },
+      where: 'id = ?',
+      whereArgs: [memoId],
+    );
+  }
+
   static Future<void> deleteMemo(String id) async {
     final db = await _db;
     await db.delete('memos', where: 'id = ?', whereArgs: [id]);
