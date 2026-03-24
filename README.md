@@ -56,8 +56,8 @@ lib/
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/memos_note.git
-   cd memos_note
+   git clone https://github.com/sheenazien8/mos-note.git
+   cd mos-note
    ```
 
 2. Install dependencies
