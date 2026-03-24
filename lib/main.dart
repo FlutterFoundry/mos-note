@@ -12,7 +12,7 @@ import 'l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
-  await LocalDatabase.database; // Initialize DB
+  await LocalDatabase.database;
   timeago.setLocaleMessages('en', timeago.EnMessages());
   timeago.setLocaleMessages('id', timeago.IdMessages());
   runApp(const ProviderScope(child: MemosApp()));
