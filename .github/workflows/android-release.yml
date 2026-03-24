@@ -2,13 +2,8 @@ name: Android Release Build
 
 on:
   push:
-    branches:
-      - master
-      - main
-  pull_request:
-    branches:
-      - master
-      - main
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       build_type:
