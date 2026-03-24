@@ -138,12 +138,26 @@ class SyncService {
     final tempName = fresh.payload['tempAttachmentName'] as String?;
     if (filePath == null) return;
 
+    // Ensure the memo still exists and still has the placeholder attachment
+    // before uploading, to avoid creating orphaned attachments on the server.
+    final memo = await MemoDao.getMemoById(memoId);
+    if (memo == null) {
+      // Memo was deleted or is otherwise unavailable; skip upload.
+      return;
+    }
+
+    final attachments = memo.attachments ?? [];
+    final hasPlaceholder = tempName != null &&
+        attachments.any((a) => a.name == tempName);
+    if (!hasPlaceholder) {
+      // The pending attachment placeholder no longer exists on this memo;
+      // skip the upload so we don't create an orphaned server attachment.
+      return;
+    }
+
     final serverAttachment = await _api.uploadAttachment(filePath);
 
-    final memo = await MemoDao.getMemoById(memoId);
-    if (memo == null) return;
-
-    final updatedAttachments = (memo.attachments ?? []).map((a) {
+    final updatedAttachments = attachments.map((a) {
       return a.name == tempName ? serverAttachment : a;
     }).toList();
 
