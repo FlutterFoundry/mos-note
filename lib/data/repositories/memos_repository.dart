@@ -340,11 +340,30 @@ class MemosRepository {
     if (online && serverNames.isNotEmpty) {
       try {
         await _api.setMemoAttachments(memoName, serverNames);
+        // Successfully linked attachments on the server; nothing more to do.
+        return;
       } catch (_) {
-        // Server linking failed — the attachment files are already uploaded.
-        // The memo's local cache already reflects the correct list, so this
-        // is safe to ignore; the next sync will re-attempt via the queued op.
+        // Fall through to queue a pending op so that server-side linking
+        // can be retried later.
       }
+    }
+
+    // If we're offline or the online call failed, ensure we queue a pending
+    // operation so that the server-side attachment list can be synchronized
+    // with the local state later.
+    if (serverNames.isNotEmpty) {
+      await PendingOpsDao.enqueue(PendingOp(
+        opType: PendingOpType.uploadAttachment,
+        memoId: memoId,
+        payload: {
+          // Indicates this op is for linking already-uploaded attachments,
+          // not for uploading new files.
+          'action': 'linkExisting',
+          'memoName': memoName,
+          'attachmentNames': serverNames,
+        },
+        createdAt: DateTime.now(),
+      ));
     }
   }
 
