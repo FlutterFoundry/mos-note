@@ -55,6 +55,7 @@ dependencies:
   # Secure storage for tokens
   flutter_secure_storage: ^9.2.2
   file_picker: ^10.3.10
+  flutter_native_splash: ^2.4.3
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +73,18 @@ flutter_launcher_icons:
   adaptive_icon_background: "#E87722"
   adaptive_icon_foreground: "assets/images/mos_notes_icon.png"
   remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#E87722"
+  image: assets/images/mos_notes_icon.png
+  color_dark: "#1a1a1a"
+  image_dark: assets/images/mos_notes_icon.png
+  android: true
+  ios: true
+  web: true
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
 
 flutter:
   generate: true
