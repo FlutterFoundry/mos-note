@@ -303,9 +303,12 @@ class MemosRepository {
   /// - Updates the local DB cache so the memo is readable offline.
   /// - For each local-placeholder attachment (name starts with
   ///   `attachments/local_`) a pending [PendingOpType.uploadAttachment] op
-  ///   is queued so the file is uploaded and linked once online.
+  ///   is queued so the file is uploaded and linked once online.  Duplicate
+  ///   ops (same memoId + tempAttachmentName) are skipped to prevent
+  ///   multiple uploads of the same file.
   /// - For server attachments the API call is attempted immediately when
-  ///   online.
+  ///   online.  If offline or the call fails, a `linkExisting` pending op is
+  ///   queued for retry on the next sync.
   Future<void> setMemoAttachments(
     String memoName,
     List<AttachmentModel> attachments,
@@ -314,9 +317,18 @@ class MemosRepository {
 
     await MemoDao.updateAttachments(memoId, attachments);
 
+    // Load existing pending ops for this memo once, to check for duplicates.
+    final existingOps = await PendingOpsDao.getByMemoId(memoId);
+    final queuedTempNames = existingOps
+        .where((o) => o.opType == PendingOpType.uploadAttachment)
+        .map((o) => o.payload['tempAttachmentName'] as String?)
+        .whereType<String>()
+        .toSet();
+
     for (final att in attachments) {
       if (att.name.startsWith('attachments/local_') &&
-          att.externalLink != null) {
+          att.externalLink != null &&
+          !queuedTempNames.contains(att.name)) {
         await PendingOpsDao.enqueue(PendingOp(
           opType: PendingOpType.uploadAttachment,
           memoId: memoId,
