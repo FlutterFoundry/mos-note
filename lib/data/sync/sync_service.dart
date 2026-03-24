@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../local/dao/memo_dao.dart';
 import '../local/dao/pending_ops_dao.dart';
