@@ -65,3 +65,34 @@ Map<String, dynamic> _$SignInResponseToJson(SignInResponse instance) =>
       'accessTokenExpiresAt': instance.accessTokenExpiresAt,
       'error': instance.error,
     };
+
+RefreshTokenRequest _$RefreshTokenRequestFromJson(Map<String, dynamic> json) =>
+    RefreshTokenRequest(
+      type: json['type'] as String,
+      name: json['name'] as String,
+    );
+
+Map<String, dynamic> _$RefreshTokenRequestToJson(
+        RefreshTokenRequest instance) =>
+    <String, dynamic>{
+      'type': instance.type,
+      'name': instance.name,
+    };
+
+RefreshTokenResponse _$RefreshTokenResponseFromJson(
+        Map<String, dynamic> json) =>
+    RefreshTokenResponse(
+      user: json['user'] == null
+          ? null
+          : UserModel.fromJson(json['user'] as Map<String, dynamic>),
+      accessToken: json['accessToken'] as String?,
+      accessTokenExpiresAt: json['accessTokenExpiresAt'] as String?,
+    );
+
+Map<String, dynamic> _$RefreshTokenResponseToJson(
+        RefreshTokenResponse instance) =>
+    <String, dynamic>{
+      'user': instance.user,
+      'accessToken': instance.accessToken,
+      'accessTokenExpiresAt': instance.accessTokenExpiresAt,
+    };

@@ -66,3 +66,25 @@ class SignInResponse {
       _$SignInResponseFromJson(json);
   Map<String, dynamic> toJson() => _$SignInResponseToJson(this);
 }
+
+@JsonSerializable()
+class RefreshTokenRequest {
+  final String type;
+  final String name;
+  const RefreshTokenRequest({required this.type, required this.name});
+  factory RefreshTokenRequest.fromJson(Map<String, dynamic> json) =>
+      _$RefreshTokenRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$RefreshTokenRequestToJson(this);
+}
+
+@JsonSerializable()
+class RefreshTokenResponse {
+  final UserModel? user;
+  final String? accessToken;
+  final String? accessTokenExpiresAt;
+  const RefreshTokenResponse(
+      {this.user, this.accessToken, this.accessTokenExpiresAt});
+  factory RefreshTokenResponse.fromJson(Map<String, dynamic> json) =>
+      _$RefreshTokenResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$RefreshTokenResponseToJson(this);
+}

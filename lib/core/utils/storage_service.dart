@@ -68,6 +68,26 @@ class StorageService {
     }
   }
 
+  static Future<void> setTokenExpiry(String expiresAt) async {
+    await setString(AppConstants.accessTokenExpiryKey, expiresAt);
+  }
+
+  static String? getTokenExpiry() =>
+      getString(AppConstants.accessTokenExpiryKey);
+
+  static bool isTokenExpired() {
+    final expiryStr = getTokenExpiry();
+    if (expiryStr == null || expiryStr.isEmpty) return true;
+    try {
+      final expiry = DateTime.parse(expiryStr);
+      return DateTime.now()
+          .toUtc()
+          .isAfter(expiry.subtract(const Duration(minutes: 5)));
+    } catch (_) {
+      return true;
+    }
+  }
+
   static UserModel? getCachedUser() {
     final userId = getString(AppConstants.userIdKey);
     final username = getString(AppConstants.usernameKey);

@@ -3,6 +3,7 @@ class AppConstants {
   static const memosInstanceKey = 'memos_instance_url';
   static const authTokenKey = 'auth_token';
   static const accessTokenKey = 'access_token'; // personal access token (PAT)
+  static const accessTokenExpiryKey = 'access_token_expiry';
   static const userIdKey = 'user_id';
   static const usernameKey = 'username';
   static const userNicknameKey = 'user_nickname';

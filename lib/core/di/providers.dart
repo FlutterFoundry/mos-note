@@ -52,6 +52,21 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     final accessToken = StorageService.getString(AppConstants.accessTokenKey);
     final online = await _isOnline();
 
+    // Proactively refresh token if expired or about to expire (online only)
+    if (online && accessToken != null && accessToken.isNotEmpty) {
+      if (StorageService.isTokenExpired()) {
+        final refreshed = await _repo.refreshAccessToken();
+        if (!refreshed) {
+          // Token refresh failed, clear auth and exit
+          await StorageService.clearCachedUser();
+          await StorageService.remove(AppConstants.accessTokenKey);
+          await StorageService.remove(AppConstants.accessTokenExpiryKey);
+          state = const AsyncValue.data(null);
+          return;
+        }
+      }
+    }
+
     // Try online validation if connected
     if (online && accessToken != null && accessToken.isNotEmpty) {
       try {

@@ -19,6 +19,14 @@ class MemosApi {
     return SignInResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<RefreshTokenResponse> refreshToken(String userId) async {
+    final res = await _dio.post('/api/v1/auth/token', data: {
+      'type': 'ACCESS_TOKEN',
+      'name': 'users/$userId',
+    });
+    return RefreshTokenResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<void> signOut() async {
     await _dio.post('/api/v1/auth/signout');
   }

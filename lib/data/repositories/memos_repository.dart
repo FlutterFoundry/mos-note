@@ -38,6 +38,10 @@ class MemosRepository {
       if (response.accessToken != null) {
         await StorageService.setString(
             AppConstants.accessTokenKey, response.accessToken!);
+        if (response.accessTokenExpiresAt != null) {
+          await StorageService.setString(AppConstants.accessTokenExpiryKey,
+              response.accessTokenExpiresAt!);
+        }
         refreshApi();
       }
       await StorageService.setString(AppConstants.userIdKey, user.userId);
@@ -54,6 +58,28 @@ class MemosRepository {
         );
       }
       rethrow;
+    }
+  }
+
+  Future<bool> refreshAccessToken() async {
+    final userId = StorageService.getString(AppConstants.userIdKey);
+    if (userId == null || userId.isEmpty) return false;
+
+    try {
+      final response = await _api.refreshToken(userId);
+      if (response.accessToken != null) {
+        await StorageService.setString(
+            AppConstants.accessTokenKey, response.accessToken!);
+        if (response.accessTokenExpiresAt != null) {
+          await StorageService.setString(AppConstants.accessTokenExpiryKey,
+              response.accessTokenExpiresAt!);
+        }
+        refreshApi();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -89,6 +115,7 @@ class MemosRepository {
     } catch (_) {}
     await StorageService.remove(AppConstants.authTokenKey);
     await StorageService.remove(AppConstants.accessTokenKey);
+    await StorageService.remove(AppConstants.accessTokenExpiryKey);
     await StorageService.remove(AppConstants.userIdKey);
     await StorageService.remove(AppConstants.usernameKey);
     // Wipe all local data including offline-only memos on sign-out
