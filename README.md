@@ -6,6 +6,16 @@
 
 A Flutter client for [Memos](https://github.com/usememos/memos) - An open source, self-hosted note taking and knowledge base application.
 
+## Screenshots
+
+| Home (Grid) | Editor | Memo Detail |
+|:---:|:---:|:---:|
+| ![Home Grid](screenshots/01_home_grid.png) | ![Editor](screenshots/02_editor.png) | ![Memo Detail](screenshots/03_memo_detail.png) |
+
+| Comments | Offline Mode | Dark Mode |
+|:---:|:---:|:---:|
+| ![Comments](screenshots/04_comments.png) | ![Offline](screenshots/05_offline.png) | ![Dark Mode](screenshots/06_dark_mode.png) |
+
 ## Features
 
 - **Memo Management**: Create, edit, and delete markdown-based notes
