@@ -94,6 +94,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       state = AsyncValue.data(user);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
+      rethrow;
     }
   }
 
@@ -105,6 +106,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       state = AsyncValue.data(user);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
+      rethrow;
     }
   }
 

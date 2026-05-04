@@ -53,6 +53,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
       if (mounted) context.go('/home');
     } catch (e) {
+      if (!mounted) return;
       final raw = e.toString();
       final message = raw.contains('Exception:')
           ? raw.replaceFirst('Exception: ', '')

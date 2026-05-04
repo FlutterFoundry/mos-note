@@ -87,9 +87,19 @@ class AttachmentModel {
 }
 
 @JsonSerializable()
+class RelationMemoRef {
+  final String name;
+  final String? snippet;
+  const RelationMemoRef({required this.name, this.snippet});
+  factory RelationMemoRef.fromJson(Map<String, dynamic> json) =>
+      _$RelationMemoRefFromJson(json);
+  Map<String, dynamic> toJson() => _$RelationMemoRefToJson(this);
+}
+
+@JsonSerializable()
 class RelationModel {
-  final String memo;
-  final String relatedMemo;
+  final RelationMemoRef memo;
+  final RelationMemoRef relatedMemo;
   final String type;
   const RelationModel({
     required this.memo,
@@ -103,15 +113,17 @@ class RelationModel {
 
 @JsonSerializable()
 class ReactionModel {
-  final int? id;
+  final String? name;
   final String? creator;
   final String? contentId;
   final String? reactionType;
+  final String? createTime;
   const ReactionModel({
-    this.id,
+    this.name,
     this.creator,
     this.contentId,
     this.reactionType,
+    this.createTime,
   });
   factory ReactionModel.fromJson(Map<String, dynamic> json) =>
       _$ReactionModelFromJson(json);

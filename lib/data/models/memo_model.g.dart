@@ -93,34 +93,49 @@ Map<String, dynamic> _$AttachmentModelToJson(AttachmentModel instance) =>
       'memo': instance.memo,
     };
 
+RelationMemoRef _$RelationMemoRefFromJson(Map<String, dynamic> json) =>
+    RelationMemoRef(
+      name: json['name'] as String,
+      snippet: json['snippet'] as String?,
+    );
+
+Map<String, dynamic> _$RelationMemoRefToJson(RelationMemoRef instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'snippet': instance.snippet,
+    };
+
 RelationModel _$RelationModelFromJson(Map<String, dynamic> json) =>
     RelationModel(
-      memo: json['memo'] as String,
-      relatedMemo: json['relatedMemo'] as String,
+      memo: RelationMemoRef.fromJson(json['memo'] as Map<String, dynamic>),
+      relatedMemo: RelationMemoRef.fromJson(
+          json['relatedMemo'] as Map<String, dynamic>),
       type: json['type'] as String,
     );
 
 Map<String, dynamic> _$RelationModelToJson(RelationModel instance) =>
     <String, dynamic>{
-      'memo': instance.memo,
-      'relatedMemo': instance.relatedMemo,
+      'memo': instance.memo.toJson(),
+      'relatedMemo': instance.relatedMemo.toJson(),
       'type': instance.type,
     };
 
 ReactionModel _$ReactionModelFromJson(Map<String, dynamic> json) =>
     ReactionModel(
-      id: (json['id'] as num?)?.toInt(),
+      name: json['name'] as String?,
       creator: json['creator'] as String?,
       contentId: json['contentId'] as String?,
       reactionType: json['reactionType'] as String?,
+      createTime: json['createTime'] as String?,
     );
 
 Map<String, dynamic> _$ReactionModelToJson(ReactionModel instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'name': instance.name,
       'creator': instance.creator,
       'contentId': instance.contentId,
       'reactionType': instance.reactionType,
+      'createTime': instance.createTime,
     };
 
 MemoPropertyModel _$MemoPropertyModelFromJson(Map<String, dynamic> json) =>
